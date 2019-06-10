@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2016 Magento. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+
+    <!--Handle to save aw_rp to sm_transaction-->
+    <event name="checkout_submit_all_after">
+        <observer name="save_aw_rp_spent_to_sm_transaction" instance="SM\Integrate\Observer\RewardPoint\Aw\HandleAfterCheckoutToSaveTransaction"/>
+        <observer name="save_aw_gc_spent_to_sm_transaction" instance="SM\Integrate\Observer\Giftcard\Aw\HandleAfterCheckoutToSaveTransaction"/>
+        <observer name="save_store_credit_spent_to_sm_transaction"
+                  instance="SM\Integrate\Observer\StoreCredit\Magento2EE\HandleAfterCheckoutToSaveTransaction"/>
+    </event>
+
+    <event name="core_collection_abstract_load_after">
+        <observer name="price_refundGC_update_observer" instance="SM\Integrate\Observer\Giftcard\Aw\HandleAfterCollectTotalRefundToGC"/>
+    </event>
+    <event name="tax_rate_data_fetch">
+        <observer name="remove_tax_refund_to_gc" instance="SM\Integrate\Observer\Giftcard\Aw\HandleTaxAfterCheckOutRefundToGC"/>
+    </event>
+    <!--BMS WAREHOUSE-->
+    <event name="pos_integrate_warehouse_filter_product">
+        <observer name="pos_integrate_warehouse_filter_product_observer" instance="\SM\Integrate\Warehouse\Observer\FilterProduct"/>
+    </event>
+    <event name="model_save_after">
+        <observer name="handle_mass_update_stock" instance="SM\Integrate\Warehouse\Observer\HandleMassUpdateStock"/>
+    </event>
+    <event name="sales_order_creditmemo_save_after">
+        <observer name="magento_customerbalance" instance="SM\Integrate\Observer\StoreCredit\Magento2EE\CreditmemoSaveAfterObserver"/>
+    </event>
+    <event name="create_store_credit_for_order_refund_to_store_credit">
+        <observer name="create_store_credit_for_order_refund_to_store_credit"
+                  instance="SM\Integrate\Observer\StoreCredit\Magento2EE\RefundToStoreCredit\CreditmemoSaveAfterObserver"/>
+    </event>
+</config>
