@@ -1,5 +1,5 @@
 {
-	"name": "conenctpos/module-integrate",
+	"name": "connectpos/module-integrate",
 	"description": "N/A",
 	"type": "magento2-module",
 	"version": "19.06.01",
@@ -25,5 +25,4 @@
 			"SM\\Integrate\\": ""
 		}
 	}
-	
 }
