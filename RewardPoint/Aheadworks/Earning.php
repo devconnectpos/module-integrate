@@ -55,6 +55,10 @@ class Earning
         return $this->getRateCalculator()->calculateEarnPoints($customerId, $baseSubTotal, $websiteId);
     }
 
+    public function calculationAmount(Quote $quote, $customerId, $websiteId = null) {
+        return $this->getRateCalculator()->calculateRewardDiscount($customerId, $this->calculation($quote, $customerId, $websiteId), $websiteId);
+    }
+
     /**
      * @return \Aheadworks\RewardPoints\Model\Calculator\RateCalculator
      */

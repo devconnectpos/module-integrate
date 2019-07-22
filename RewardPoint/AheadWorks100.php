@@ -123,6 +123,7 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
                                  ->getCustomerRewardPointsDetails($this->getQuote()->getCustomerId());
         $quoteRpData = new RewardPointQuoteData();
         $rpEarn = $this->earningCalculator->calculation($this->getQuote(), $this->getQuote()->getCustomerId());
+        $rpEarnAmount = $this->earningCalculator->calculationAmount($this->getQuote(), $this->getQuote()->getCustomerId(), $this->getQuote()->getStore()->getWebsiteId());
         $quoteRpData->addData(
             [
                 'use_reward_point'                  => $this->getQuote()->getAwUseRewardPoints(),
@@ -133,6 +134,7 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
                 'reward_point_discount_amount'      => $this->getQuote()->getData('aw_reward_points_amount'),
                 'base_reward_point_discount_amount' => $this->getQuote()->getData('base_aw_reward_points_amount'),
                 'reward_point_earn'                 => $rpEarn,
+                'reward_point_earn_amount'          => $rpEarnAmount,
                 'customer_reward_points_once_min_balance' => $customerRPDetail->getCustomerRewardPointsOnceMinBalance()
             ]
         );
