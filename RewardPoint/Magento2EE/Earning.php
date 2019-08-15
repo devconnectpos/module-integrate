@@ -39,13 +39,14 @@ class Earning
                             + ($quote->getData('retail_discount_per_item'));
         }
 
-        if ($baseSubTotal <= 0) {
-            return 0;
-        }
-
         // if order use store credit, then baseSubTotal must subtract the store credit amount
         if ($quote->getData('customer_balance_amount_used')) {
             $baseSubTotal -= $quote->getData('customer_balance_amount_used');
+
+        }
+
+        if ($baseSubTotal <= 0) {
+            return 0;
         }
 
         return $this->calculateEarnPoints($baseSubTotal, $rateCurrency, $ratePoint);
