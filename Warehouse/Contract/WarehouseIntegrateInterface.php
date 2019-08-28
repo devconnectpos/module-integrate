@@ -71,4 +71,12 @@ interface WarehouseIntegrateInterface
      * @return boolean
      */
     public function isProductSalable($product);
+
+    /**
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptItem $item
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptTransaction $transaction
+     *
+     * @return mixed
+     */
+    public function returnItemToStock($item, $transaction);
 }

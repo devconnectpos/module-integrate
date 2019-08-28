@@ -15,6 +15,7 @@ use Magento\GiftCardImportExport\Model\Import\Product\Type\GiftCard as GiftCardT
 use SM\Integrate\GiftCard\Contract\AbstractGCIntegrate;
 use SM\Integrate\GiftCard\Contract\GCIntegrateInterface;
 use \Magento\Store\Model\StoreRepository;
+use SM\XRetail\Helper\Data;
 
 class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
 {
@@ -112,18 +113,24 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
      * @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface
      */
     protected $localeDate;
+    /**
+     * @var \SM\XRetail\Helper\Data
+     */
+    private $retailHelper;
 
     public function __construct(
         \Magento\Framework\ObjectManagerInterface $objectManager,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \SM\Integrate\Helper\Data $integrateHelperData,
+        \SM\XRetail\Helper\Data $retailHelper,
         StoreRepository $storeRepository)
     {
         $this->storeManager       = $storeManager;
         $this->integrateHelperData = $integrateHelperData;
         $this->localeDate         = $localeDate;
         $this->storeRepository    = $storeRepository;
+        $this->retailHelper       = $retailHelper;
         parent::__construct($objectManager);
     }
 
@@ -211,7 +218,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
             $address = $quote->getBillingAddress();
         }
         $usedGiftCards = [];
-        $usedGiftCards = unserialize($address->getData('used_gift_cards'));
+        $usedGiftCards = $this->retailHelper->unserialize($address->getData('used_gift_cards'), true);
 
         if (count($usedGiftCards) > 0) {
             foreach ($usedGiftCards as $giftCard) {

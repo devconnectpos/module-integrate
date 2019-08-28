@@ -7,7 +7,6 @@
 
 namespace SM\Integrate\Observer\StoreCredit\Magento2EE;
 
-use Magento\CustomerBalance\Model\Balance\History;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
@@ -88,7 +87,7 @@ class CreditmemoSaveAfterObserver implements ObserverInterface
                 )->setAmountDelta(
                     $creditmemo->getBsCustomerBalTotalRefunded()
                 )->setHistoryAction(
-                    History::ACTION_REFUNDED
+                    \Magento\CustomerBalance\Model\Balance\History::ACTION_REFUNDED
                 )->setOrder(
                     $order
                 )->setCreditMemo(

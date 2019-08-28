@@ -74,6 +74,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                             ->setData('payment_type', RetailPayment::GIFT_CARD_PAYMENT_TYPE)
                             ->setData('amount', $order->getData('aw_giftcard_amount'))
                             ->setData('is_purchase', 1)
+                            ->setData('user_name', $order->getData('user_name'))
                             ->setData('order_id', $order->getEntityId())
                             ->save();
             }

@@ -7,7 +7,6 @@
 
 namespace SM\Integrate\Observer\StoreCredit\Magento2EE\RefundToStoreCredit;
 
-use Magento\CustomerBalance\Model\Balance\History;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\ObjectManagerInterface;
@@ -56,7 +55,7 @@ class CreditmemoSaveAfterObserver implements ObserverInterface
             )->setAmountDelta(
                 $creditmemo->getBaseGrandTotal()
             )->setHistoryAction(
-                History::ACTION_CREATED
+                \Magento\CustomerBalance\Model\Balance\History::ACTION_CREATED
             )->setAdditionalInfo(
                 'Refund to Store Credit Order #' . $order->getIncrementId()
             )->save();

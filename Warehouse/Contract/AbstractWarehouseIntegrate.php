@@ -8,10 +8,13 @@
 
 namespace SM\Integrate\Warehouse\Contract;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use SM\Core\Api\SearchResult;
 use SM\Integrate\Data\XWarehouse;
-use SM\Integrate\Helper\Data;
+use SM\Integrate\Helper\Data as IntegrateHelper;
 
 /**
  * Class AbstractWarehouseIntegrate
@@ -29,19 +32,26 @@ abstract class AbstractWarehouseIntegrate
      * @var \SM\Integrate\Helper\Data
      */
     protected $integrateData;
+    /**
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     */
+    protected $productRepository;
 
     /**
      * AbstractWarehouseIntegrate constructor.
      *
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
-     * @param \SM\Integrate\Helper\Data                 $integrateData
+     * @param \Magento\Framework\ObjectManagerInterface       $objectManager
+     * @param \SM\Integrate\Helper\Data                       $integrateData
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
-        Data $integrateData
+        IntegrateHelper $integrateData,
+        ProductRepositoryInterface $productRepository
     ) {
         $this->integrateData = $integrateData;
         $this->objectManager = $objectManager;
+        $this->productRepository = $productRepository;
     }
 
     protected $transformWarehouseData
@@ -98,5 +108,23 @@ abstract class AbstractWarehouseIntegrate
             ->setItems($items)
             ->setTotalCount($size)
             ->setLastPageNumber($lastPageNumber);
+    }
+
+    /**
+     * @param int $productId
+     *
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     */
+    public function triggerRealTimeProduct($productId)
+    {
+        try {
+            $product = $this->productRepository->getById($productId);
+            $observer = $this->objectManager->create('SM\Performance\Observer\ModelAfterSave');
+            $ob = new Observer();
+            $ob->setData('object', $product);
+            $observer->execute($ob);
+        } catch (NoSuchEntityException $e) {
+            throw new NoSuchEntityException();
+        }
     }
 }

@@ -78,6 +78,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                                 ->setData('payment_type', RetailPayment::STORE_CREDIT_PAYMENT_TYPE)
                                 ->setData('amount', $order->getData('customer_balance_amount'))
                                 ->setData('is_purchase', 1)
+                                ->setData('user_name', $order->getData('user_name'))
                                 ->setData('order_id', $order->getEntityId())
                                 ->save();
                 }

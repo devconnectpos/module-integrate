@@ -8,8 +8,9 @@
 
 namespace SM\Integrate\Warehouse;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\ObjectManagerInterface;
-use SM\Integrate\Helper\Data;
+use SM\Integrate\Helper\Data as IntegrateHelper;
 use SM\Integrate\Warehouse\Contract\AbstractWarehouseIntegrate;
 use SM\Integrate\Warehouse\Contract\WarehouseIntegrateInterface;
 use SM\Product\Repositories\ProductManagement\ProductStock;
@@ -36,15 +37,17 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
      *
      * @param \Magento\Framework\ObjectManagerInterface               $objectManager
      * @param \SM\Integrate\Helper\Data                               $integrateData
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface         $productRepository
      * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
-        Data $integrateData,
+        IntegrateHelper $integrateData,
+        ProductRepositoryInterface $productRepository,
         ProductStock $productStock
     ) {
         $this->productStock = $productStock;
-        parent::__construct($objectManager, $integrateData);
+        parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
     /**
@@ -163,5 +166,16 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
     public function isProductSalable($product)
     {
        return true;
+    }
+
+    /**
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptItem        $item
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptTransaction $transaction
+     *
+     * @return mixed
+     */
+    public function returnItemToStock($item, $transaction)
+    {
+        // TODO: Implement returnItemToStock() method.
     }
 }

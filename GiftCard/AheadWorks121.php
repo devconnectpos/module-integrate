@@ -258,8 +258,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
     public function removeGiftCard($giftData)
     {
         $quote = $this->getQuote();
-        $quoteGiftcards = $quote->getExtensionAttributes()->getAwGiftcardCodes();
-        if ($quote->getExtensionAttributes() && $quoteGiftcards) {
+        if ($quote->getExtensionAttributes() && $quoteGiftcards = $quote->getExtensionAttributes()->getAwGiftcardCodes()) {
             foreach ($quoteGiftcards as $quoteGiftcard) {
                 if ($quoteGiftcard->getGiftcardCode() === $giftData['gift_code']) {
                     $quoteGiftcard->setIsRemove(true);

@@ -7,10 +7,19 @@
 
 namespace SM\Integrate\Warehouse;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilderFactory;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Model\DataObject;
 use SM\Integrate\Data\XWarehouse;
+use SM\Integrate\Helper\Data as IntegrateHelper;
 use SM\Integrate\Warehouse\Contract\AbstractWarehouseIntegrate;
 use SM\Integrate\Warehouse\Contract\WarehouseIntegrateInterface;
+use SM\Product\Repositories\ProductManagement\ProductStock;
 use SM\XRetail\Helper\DataConfig;
 use Magento\InventorySalesApi\Api\Data\SalesChannelInterface;
 
@@ -18,9 +27,15 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 {
 
     /**
+     * @var \Magento\Framework\Api\SearchCriteriaBuilderFactory
+     */
+    protected $searchCriteriaBuilderFactory;
+
+    /**
      * @var \Magento\Framework\App\ResourceConnection
      */
     private $resource;
+
     /**
      * @var \SM\Product\Repositories\ProductManagement\ProductStock
      */
@@ -53,28 +68,36 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      */
     private $connection;
 
+    private $sourceItemProcessor;
+
+    private $sourceItemRepository;
+
     /**
      * BootMyShop0015 constructor.
      *
      * @param \Magento\Framework\ObjectManagerInterface               $objectManager
-     * @param \SM\Integrate\Helper\Data                               $integrateData
+     * @param IntegrateHelper                                         $integrateData
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface         $productRepository
      * @param \Magento\Framework\App\ResourceConnection               $resource
      * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
+     * @param \Magento\Store\Model\StoreManagerInterface              $storeManager
+     * @param \Magento\Framework\Api\SearchCriteriaBuilderFactory     $searchCriteriaBuilderFactory
      */
     public function __construct(
-        \Magento\Framework\ObjectManagerInterface $objectManager,
-        \SM\Integrate\Helper\Data $integrateData,
-        \Magento\Framework\App\ResourceConnection $resource,
-        \SM\Product\Repositories\ProductManagement\ProductStock $productStock,
-        \Magento\Store\Model\StoreManagerInterface $storeManager
-    )
-    {
+        ObjectManagerInterface $objectManager,
+        IntegrateHelper $integrateData,
+        ProductRepositoryInterface $productRepository,
+        ResourceConnection $resource,
+        ProductStock $productStock,
+        StoreManagerInterface $storeManager,
+        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+    ) {
         $this->productStock = $productStock;
-        $this->resource = $resource;
-        $this->connection = $resource->getConnection();
-
+        $this->resource     = $resource;
+        $this->connection   = $resource->getConnection();
         $this->storeManager = $storeManager;
-        parent::__construct($objectManager, $integrateData);
+        $this->searchCriteriaBuilderFactory = $searchCriteriaBuilderFactory;
+        parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
     /**
@@ -93,9 +116,13 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
                        [
                            "physical_quantity"  => "quantity",
                            "available_quantity" => "quantity",
-                           "is_in_stock" => "status"
-                       ])
-                   ->where("warehouse_item.source_code = '{$warehouseId}' OR (e.type_id <> 'simple' AND e.type_id <> 'virtual')");
+                           "is_in_stock"        => "status"
+                       ]
+                   )
+                   ->where(
+                       "warehouse_item.source_code = '{$warehouseId}' 
+                       OR (e.type_id <> 'simple' AND e.type_id <> 'virtual')"
+                   );
         return $collection;
     }
 
@@ -173,16 +200,25 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         return $this->objectManager->create('BoostMyShop\AdvancedStock\Model\ResourceModel\Routing\Store\Warehouse\Collection');
     }
 
+    /**
+     * @return mixed
+     */
     protected function getStockSourceLinkCollection()
     {
         return $this->objectManager->create('\Magento\Inventory\Model\ResourceModel\StockSourceLink\Collection');
     }
 
+    /**
+     * @return mixed
+     */
     protected function getWebsiteCollection()
     {
         return $this->objectManager->create('\Magento\Store\Model\ResourceModel\Website\Collection');
     }
 
+    /**
+     * @return mixed
+     */
     protected function getStockCollection()
     {
         return $this->objectManager->create('Magento\InventoryApi\Api\StockRepositoryInterface');
@@ -210,11 +246,19 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         return $collection;
     }
 
+    /**
+     * @param $product
+     * @param $warehouseId
+     * @param $item
+     *
+     * @return array|mixed
+     */
     public function getStockItem($product, $warehouseId, $item)
     {
-        $defaultStock = $this->productStock->getStock($product, 0);
-        $defaultStock['qty'] =  $item->getData('available_quantity');
+        $defaultStock                = $this->productStock->getStock($product, 0);
+        $defaultStock['qty']         = $item->getData('available_quantity');
         $defaultStock['is_in_stock'] = $item->getData('is_in_stock');
+
         return $defaultStock;
     }
 
@@ -271,16 +315,139 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         }
     }
 
+    /**
+     * @return mixed
+     */
     public function getStockId()
     {
         $websiteCode = $this->storeManager->getWebsite()->getCode();
         return $this->objectManager->get(\Magento\InventorySalesApi\Api\StockResolverInterface::class)->execute(SalesChannelInterface::TYPE_WEBSITE, $websiteCode)->getStockId();
     }
 
+    /**
+     * @param $product
+     *
+     * @return bool
+     */
     public function isProductSalable($product)
     {
         $stockId = $this->getStockId();
-        return $this->objectManager->create('\Magento\InventorySalesApi\Api\IsProductSalableForRequestedQtyInterface')->execute($product['sku'], $stockId, $product['qty_ordered'])->isSalable();
+        return $this->objectManager->create(
+            \Magento\InventorySalesApi\Api\IsProductSalableForRequestedQtyInterface::class
+        )->execute(
+            $product['sku'],
+            $stockId,
+            $product['qty_ordered']
+        )->isSalable();
+    }
 
+    /**
+     * @param $stockSourceLink
+     *
+     * @return array
+     */
+    public function getListStock($stockSourceLink)
+    {
+        $listStock = [];
+        foreach ($stockSourceLink->getItems() as $s) {
+            $stock     = $this->getStockCollection()->get($s['stock_id']);
+            $extension = $stock->getData('extension_attributes');
+            foreach ($extension->getSalesChannels() as $sales_channel) {
+                $websites = $this->getWebsiteCollection()->addFieldToFilter(
+                    'code',
+                    $sales_channel->getData('code')
+                );
+                $channel  = $sales_channel->getData();
+                foreach ($websites->getItems() as $w) {
+                    $channel['website_id'] = $w->getId();
+                }
+            }
+        }
+    }
+
+    /**
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptItem        $item
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptTransaction $transaction
+     *
+     * @return mixed|void
+     * @throws \Magento\Framework\Exception\CouldNotSaveException
+     * @throws \Magento\Framework\Exception\InputException
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws \Magento\Framework\Exception\StateException
+     */
+    public function returnItemToStock($item, $transaction)
+    {
+        $sku            = $item->getProductSku();
+        $sourceCode     = $transaction->getWarehouseId();
+        $source         = $this->getWarehouseCollection(new DataObject(['entity_id' => $sourceCode]))
+                               ->getFirstItem();
+        $sourceItems    = [];
+        $sourceItemsMap = $this->getCurrentSourceItemsMap($sku);
+        foreach ($sourceItemsMap as $sourceItem) {
+            $sourceItemData = [
+                'source_code'                  => $sourceItem->getSourceCode(),
+                'quantity'                     => (float)$sourceItem->getQuantity(),
+                'status'                       => $sourceItem->getStatus(),
+                'name'                         => $source->getData('name'),
+                'source_status'                => 'true',
+                'notify_stock_qty'             => '1',
+                'notify_stock_qty_use_default' => '1',
+                'initialize'                   => 'true',
+                'record_id'                    => $sourceItem->getSourceCode()
+            ];
+            if ($sourceItem->getSourceCode() === $sourceCode) {
+                $sourceItemData['quantity'] = (float)$sourceItem->getQuantity() + (float)$item->getProductQty();
+            }
+
+            $sourceItems[] = $sourceItemData;
+        }
+        $this->getSourceItemProcessor()->process($sku, $sourceItems);
+        $this->triggerRealTimeProduct($item->getProductId());
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function getSourceItemProcessor()
+    {
+        if ($this->sourceItemProcessor === null) {
+            $this->sourceItemProcessor = $this->objectManager->create('Magento\InventoryCatalogAdminUi\Observer\SourceItemsProcessor');
+        }
+
+        return $this->sourceItemProcessor;
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function getSourceItemRepository()
+    {
+        if ($this->sourceItemRepository === null) {
+            $this->sourceItemRepository = $this->objectManager->create('Magento\InventoryApi\Api\SourceItemRepositoryInterface');
+        }
+
+        return $this->sourceItemRepository;
+    }
+
+    /**
+     * @param $sku
+     *
+     * @return array
+     */
+    protected function getCurrentSourceItemsMap($sku)
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->searchCriteriaBuilderFactory->create();
+        $searchCriteria        = $searchCriteriaBuilder->addFilter(ProductInterface::SKU, $sku)->create();
+        $sourceItems           = $this->getSourceItemRepository()->getList($searchCriteria)->getItems();
+
+        $sourceItemMap = [];
+        if ($sourceItems) {
+            foreach ($sourceItems as $sourceItem) {
+                $sourceItemMap[$sourceItem->getSourceCode()] = $sourceItem;
+            }
+        }
+
+        return $sourceItemMap;
     }
 }
