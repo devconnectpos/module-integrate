@@ -36,6 +36,7 @@ class Data
      * @var \Magento\Framework\Module\ModuleListInterface
      */
     private $moduleList;
+    private $isIntegrateMultipleWareHouse;
 
     /**
      * Data constructor.
@@ -113,6 +114,29 @@ class Data
     /**
      * @return bool
      */
+    public function isIntegrateMultipleWareHouse()
+    {
+        if (is_null($this->isIntegrateMultipleWareHouse)) {
+            $configValue          = $this->scopeConfig->getValue('xretail/pos/integrate_wh');
+            if (!!$configValue && $configValue !== 'none') {
+                if ($configValue === 'bms' && $this->isIntegrateWH()) {
+                    $this->isIntegrateMultipleWareHouse = true;
+                } elseif ($configValue === 'magento_inventory' && $this->isMagentoInventory()) {
+                    $this->isIntegrateMultipleWareHouse = true;
+                } else {
+                    $this->isIntegrateMultipleWareHouse = false;
+                }
+            } else {
+                $this->isIntegrateMultipleWareHouse = false;
+            }
+        }
+
+        return $this->isIntegrateMultipleWareHouse;
+    }
+
+    /**
+     * @return bool
+     */
     public function isIntegrateWH()
     {
         return !!$this->moduleList->getOne("BoostMyShop_AdvancedStock");
@@ -130,7 +154,8 @@ class Data
 
     public function isAHWRewardPoints()
     {
-        return !!$this->moduleList->getOne("Aheadworks_RewardPoints");
+        $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+        return !!$this->moduleList->getOne("Aheadworks_RewardPoints") && $configValue === 'aheadWorks';
     }
 
     public function isGiftCardMagento2EE()
@@ -140,7 +165,8 @@ class Data
 
     public function isRewardPointMagento2EE()
     {
-        return !!$this->moduleList->getOne("Magento_Reward");
+        $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+        return !!$this->moduleList->getOne("Magento_Reward") && $configValue === 'mage2_ee';
     }
 
     public function isExistStoreCreditMagento2EE()

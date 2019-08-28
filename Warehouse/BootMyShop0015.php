@@ -7,13 +7,15 @@
 
 namespace SM\Integrate\Warehouse;
 
+use Magento\Backend\Model\Auth\Session;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Api\SearchResult;
 use SM\Core\Model\DataObject;
 use SM\Integrate\Data\XWarehouse;
-use SM\Integrate\Helper\Data;
+use SM\Integrate\Helper\Data as IntegrateHelper;
 use SM\Integrate\Warehouse\Contract\AbstractWarehouseIntegrate;
 use SM\Integrate\Warehouse\Contract\WarehouseIntegrateInterface;
 use SM\Product\Repositories\ProductManagement\ProductStock;
@@ -21,6 +23,11 @@ use SM\XRetail\Helper\DataConfig;
 
 class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseIntegrateInterface
 {
+
+    /**
+     * @var \Magento\Backend\Model\Auth\Session
+     */
+    protected $backendAuthSession;
 
     /**
      * @var \Magento\Framework\App\ResourceConnection
@@ -54,25 +61,33 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
      */
     private $storeManager;
 
+    private $stockMovement;
+
     /**
      * BootMyShop0015 constructor.
      *
      * @param \Magento\Framework\ObjectManagerInterface               $objectManager
      * @param \SM\Integrate\Helper\Data                               $integrateData
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface         $productRepository
      * @param \Magento\Framework\App\ResourceConnection               $resource
      * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
+     * @param \Magento\Store\Model\StoreManagerInterface              $storeManager
+     * @param \Magento\Backend\Model\Auth\Session                     $backendAuthSession
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
-        Data $integrateData,
+        IntegrateHelper $integrateData,
+        ProductRepositoryInterface $productRepository,
         ResourceConnection $resource,
         ProductStock $productStock,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        Session $backendAuthSession
     ) {
-        $this->productStock = $productStock;
-        $this->resource     = $resource;
-        $this->storeManager = $storeManager;
-        parent::__construct($objectManager, $integrateData);
+        $this->productStock       = $productStock;
+        $this->resource           = $resource;
+        $this->storeManager       = $storeManager;
+        $this->backendAuthSession = $backendAuthSession;
+        parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
     /**
@@ -289,5 +304,44 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
     public function isProductSalable($product)
     {
         return true;
+    }
+
+    /**
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptItem        $item
+     * @param \SM\RefundWithoutReceipt\Model\RefundWithoutReceiptTransaction $transaction
+     *
+     * @return mixed|void
+     * @throws \Magento\Framework\Exception\CouldNotSaveException
+     * @throws \Magento\Framework\Exception\InputException
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws \Magento\Framework\Exception\StateException
+     */
+    public function returnItemToStock($item, $transaction)
+    {
+        $userId = null;
+        if ($this->backendAuthSession->getUser()) {
+            $userId = $this->backendAuthSession->getUser()->getId();
+        }
+
+        $this->getStockMovement()->create()
+             ->create(
+                 $item->getProductId(),
+                 0,
+                 (int)$transaction->getWarehouseId(),
+                 $item->getProductQty(),
+                 \BoostMyShop\AdvancedStock\Model\StockMovement\Category::adjustment,
+                 __('Return to stock (Credit Memo #%1)', $transaction->getId()),
+                 $userId
+             );
+        $this->triggerRealTimeProduct($item->getProductId());
+    }
+
+    protected function getStockMovement()
+    {
+        if ($this->stockMovement === null) {
+            $this->stockMovement = $this->objectManager->create('\BoostMyShop\AdvancedStock\Model\StockMovementFactory');
+        }
+
+        return $this->stockMovement;
     }
 }

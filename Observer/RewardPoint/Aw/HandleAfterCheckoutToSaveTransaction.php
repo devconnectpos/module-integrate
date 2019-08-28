@@ -82,6 +82,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                                 ->setData('payment_type', RetailPayment::REWARD_POINT_PAYMENT_TYPE)
                                 ->setData('amount', $order->getData('reward_currency_amount'))
                                 ->setData('is_purchase', 1)
+                                ->setData('user_name', $order->getData('user_name'))
                                 ->setData('order_id', $order->getEntityId())
                                 ->save();
                 }
@@ -102,6 +103,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                                 ->setData('payment_type', RetailPayment::REWARD_POINT_PAYMENT_TYPE)
                                 ->setData('amount', $order->getData('aw_reward_points_amount'))
                                 ->setData('is_purchase', 1)
+                                ->setData('user_name', $order->getData('user_name'))
                                 ->setData('order_id', $order->getEntityId())
                                 ->save();
                 }

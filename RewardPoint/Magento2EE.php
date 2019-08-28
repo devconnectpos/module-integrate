@@ -38,6 +38,10 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     protected $rewardFactory;
     /**
+     * @var \Magento\Customer\Model\CustomerFactory
+     */
+    protected $customerFactory;
+    /**
      * @var \SM\Integrate\RewardPoint\Magento2EE\Earning
      */
     private $earningCalculator;
@@ -49,16 +53,19 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
      * @param \Magento\Store\Model\StoreManagerInterface   $storeManager
      * @param \SM\Integrate\Helper\Data                    $integrateHelperData
      * @param \SM\Integrate\RewardPoint\Magento2EE\Earning $earning
+     * @param \Magento\Customer\Model\CustomerFactory      $customerFactory
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
         StoreManagerInterface $storeManager,
         Data $integrateHelperData,
-        Earning $earning
+        Earning $earning,
+        \Magento\Customer\Model\CustomerFactory $customerFactory
     ) {
         $this->earningCalculator   = $earning;
         $this->storeManager       = $storeManager;
         $this->integrateHelperData = $integrateHelperData;
+        $this->customerFactory = $customerFactory;
         parent::__construct($objectManager);
     }
 
@@ -107,18 +114,29 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
         return $quoteRpData;
     }
 
-    protected function getRewardCollection($customer, $scope = null)
+    /**
+     * @param mixed $customerId
+     * @param null $scope
+     *
+     * @return \Magento\Reward\Model\Reward
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    protected function getRewardCollection($customerId, $scope = null)
     {
         if (is_null($scope)) {
             $scope = $this->storeManager->getWebsite()->getId();
         }
-        if (is_null($this->rewardInstance)) {
+        if ($customerId && is_string($customerId)) {
+            $customer = $this->customerFactory->create()->load($customerId);
+        } else {
+            $customer = $this->customerFactory->create()->load($customerId->getId());
+        }
+        if ($this->rewardInstance === null) {
             if ($customer && $customer->getId()) {
-                $this->rewardInstance = $this->getRewardFactory()->create()->setCustomer(
-                    $customer
-                )->setWebsiteId(
-                    $scope
-                )->loadByCustomer();
+                $this->rewardInstance = $this->getRewardFactory()->create()
+                                                                 ->setCustomer($customer->getDataModel())
+                                                                 ->setWebsiteId($scope)
+                                                                 ->loadByCustomer();
             }
         }
         return $this->rewardInstance;
@@ -134,10 +152,11 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
 
     /**
      *
-     * @param      $customer
-     * @param null $scope
+     * @param mixed $customer
+     * @param null  $scope
      *
      * @return int
+     * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function getCurrentPointBalance($customer, $scope = null)
     {
