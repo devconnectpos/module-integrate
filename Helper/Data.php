@@ -158,6 +158,11 @@ class Data
         return !!$this->moduleList->getOne("Aheadworks_RewardPoints") && $configValue === 'aheadWorks';
     }
 
+    public function isAHWRewardPointsExist()
+    {
+        return !!$this->moduleList->getOne("Aheadworks_RewardPoints");
+    }
+
     public function isGiftCardMagento2EE()
     {
         return !!$this->moduleList->getOne("Magento_GiftCardAccount");
@@ -168,6 +173,12 @@ class Data
         $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
         return !!$this->moduleList->getOne("Magento_Reward") && $configValue === 'mage2_ee';
     }
+
+    public function isRewardPointMagento2EEExist()
+    {
+        return !!$this->moduleList->getOne("Magento_Reward");
+    }
+
 
     public function isExistStoreCreditMagento2EE()
     {

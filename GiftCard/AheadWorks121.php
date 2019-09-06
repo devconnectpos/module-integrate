@@ -369,8 +369,8 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
             'Magento\Catalog\Model\Product'
         )->load($this->getRefundToGCProductId());
 
-        if ($data['is_default_codepool_pattern'] != true
-            && !!$data['code_pool']
+        if ((!isset($data['is_default_codepool_pattern']) || $data['is_default_codepool_pattern'] != true)
+            && isset($data['code_pool']) && !!$data['code_pool']
             && class_exists('\Aheadworks\Giftcard\Api\Data\ProductAttributeInterface')) {
             $productModel->setData(ProductAttributeInterface::CODE_AW_GC_POOL, $data['code_pool']);
         } else {

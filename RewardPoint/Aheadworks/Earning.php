@@ -27,19 +27,19 @@ class Earning
     public function calculation(Quote $quote, $customerId, $websiteId = null)
     {
         $baseSubTotal     = 0;
-        $shippingDiscount = $quote->getBaseShippingDiscountAmount()
+        $shippingDiscount = $quote->getShippingAddress()->getBaseShippingDiscountAmount()
                             + $quote->getBaseAwRewardPointsShippingAmount();
 
         switch ($this->getConfigAheadworks()->getPointsEarningCalculation($websiteId)) {
             case PointsEarning::BEFORE_TAX:
                 $baseSubTotal = $quote->getBaseGrandTotal()
-                                - $quote->getBaseShippingAmount()
+                                - $quote->getShippingAddress()->getBaseShippingAmount()
                                 + $shippingDiscount
-                                - $quote->getBaseTaxAmount();
+                                - $quote->getShippingAddress()->getBaseTaxAmount();
                 break;
             case PointsEarning::AFTER_TAX:
                 $baseSubTotal = $quote->getBaseGrandTotal()
-                                - $quote->getBaseShippingAmount()
+                                - $quote->getShippingAddress()->getBaseShippingAmount()
                                 + $shippingDiscount;
                 break;
         }
