@@ -38,6 +38,9 @@ class Data
     private $moduleList;
     private $isIntegrateMultipleWareHouse;
 
+    private $isIntegrateGcPWA;
+    private $isIntegrateRpPWA;
+
     /**
      * Data constructor.
      *
@@ -75,6 +78,40 @@ class Data
         }
 
         return $this->isIntegrateRp;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isIntegrateRPInPWA()
+    {
+        if (is_null($this->isIntegrateRpPWA)) {
+            $configValue = $this->scopeConfig->getValue('pwa/integrate/pwa_integrate_reward_points');
+            if (!!$configValue && $configValue === 'true' && $this->isAHWRewardPointsExist()) {
+                $this->isIntegrateRpPWA = true;
+            } else {
+                $this->isIntegrateRpPWA = false;
+            }
+        }
+
+        return $this->isIntegrateRpPWA;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isIntegrateGCInPWA()
+    {
+        if (is_null($this->isIntegrateGcPWA)) {
+            $configValue          = $this->scopeConfig->getValue('pwa/integrate/pwa_integrate_gift_card');
+            if (!!$configValue && $configValue === 'true' && $this->isAHWGiftCardxist()) {
+                $this->isIntegrateGcPWA = true;
+            } else {
+                $this->isIntegrateGcPWA = false;
+            }
+        }
+
+        return $this->isIntegrateGcPWA;
     }
 
     /**
