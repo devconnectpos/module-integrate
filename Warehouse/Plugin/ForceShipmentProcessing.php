@@ -7,7 +7,6 @@
 
 namespace SM\Integrate\Warehouse\Plugin;
 
-use BoostMyShop\OrderPreparation\Observer\SalesOrderShipmentSaveAfter;
 use Closure;
 use Magento\Framework\Event\Observer;
 use SM\Integrate\Model\WarehouseIntegrateManagement;
@@ -24,7 +23,7 @@ class ForceShipmentProcessing
      * @return mixed|void
      */
     public function aroundExecute(
-        SalesOrderShipmentSaveAfter $subject,
+        \BoostMyShop\OrderPreparation\Observer\SalesOrderShipmentSaveAfter $subject,
         Closure $proceed,
         Observer $observer
     ) {

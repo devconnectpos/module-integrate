@@ -76,10 +76,15 @@ class GCIntegrateManagement extends ServiceAbstract
      */
     public function getCurrentIntegrateModel()
     {
-        $configIntegrateGiftCardValue = $this->scopeConfig->getValue('xretail/pos/integrate_gc');
+        $configIntegrateGiftCardValue      = $this->scopeConfig->getValue('xretail/pos/integrate_gc');
+        $configIntegrateGiftCardValueInPWA = $this->scopeConfig->getValue('pwa/integrate/pwa_integrate_gift_card');
         if (is_null($this->currentIntegrateModel) && $configIntegrateGiftCardValue != 'none') {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_GC_INTEGRATE[$configIntegrateGiftCardValue][0]['class'];
+
+            $this->currentIntegrateModel = $this->objectManager->create($class);
+        } elseif (is_null($this->currentIntegrateModel) && $configIntegrateGiftCardValueInPWA != 'none') {
+            $class = self::$LIST_GC_INTEGRATE['aheadWorks'][0]['class'];
 
             $this->currentIntegrateModel = $this->objectManager->create($class);
         }
