@@ -13,7 +13,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
-use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Config\Model\Config\Loader;
 
 class GCIntegrateManagement extends ServiceAbstract
 {
@@ -46,28 +46,28 @@ class GCIntegrateManagement extends ServiceAbstract
      */
     private $objectManager;
     /**
-     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     * @var \Magento\Config\Model\Config\Loader
      */
-    private $scopeConfig;
+    protected $configLoader;
 
     /**
-     * RPIntegrateManagement constructor.
+     * GCIntegrateManagement constructor.
      *
      * @param \Magento\Framework\App\RequestInterface            $requestInterface
      * @param \SM\XRetail\Helper\DataConfig                      $dataConfig
      * @param \Magento\Store\Model\StoreManagerInterface         $storeManager
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Framework\ObjectManagerInterface          $objectManager
+     * @param \Magento\Config\Model\Config\Loader                $loader
      */
     public function __construct(
         RequestInterface $requestInterface,
         DataConfig $dataConfig,
         StoreManagerInterface $storeManager,
-        ScopeConfigInterface $scopeConfig,
-        ObjectManagerInterface $objectManager
+        ObjectManagerInterface $objectManager,
+        Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->scopeConfig   = $scopeConfig;
+        $this->configLoader  = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -76,8 +76,14 @@ class GCIntegrateManagement extends ServiceAbstract
      */
     public function getCurrentIntegrateModel()
     {
-        $configIntegrateGiftCardValue      = $this->scopeConfig->getValue('xretail/pos/integrate_gc');
-        $configIntegrateGiftCardValueInPWA = $this->scopeConfig->getValue('pwa/integrate/pwa_integrate_gift_card');
+        $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
+        $configIntegrateGiftCardValue      = isset($config['xretail/pos/integrate_gc']) ?
+            $config['xretail/pos/integrate_gc']['value'] : 'none';
+
+        $configPWA = $this->configLoader->getConfigByPath('pwa/integrate', 'default', 0);
+        $configIntegrateGiftCardValueInPWA      = isset($configPWA['pwa/integrate/pwa_integrate_gift_card']) ?
+            $configPWA['pwa/integrate/pwa_integrate_gift_card']['value'] : 'none';
+
         if (is_null($this->currentIntegrateModel) && $configIntegrateGiftCardValue != 'none') {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_GC_INTEGRATE[$configIntegrateGiftCardValue][0]['class'];
