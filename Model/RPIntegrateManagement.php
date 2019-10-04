@@ -15,6 +15,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
+use Magento\Config\Model\Config\Loader;
 
 /**
  * Class RPIntegrateManagement
@@ -58,28 +59,28 @@ class RPIntegrateManagement extends ServiceAbstract
      */
     private $objectManager;
     /**
-     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     * @var \Magento\Config\Model\Config\Loader
      */
-    private $scopeConfig;
+    protected $configLoader;
 
     /**
      * RPIntegrateManagement constructor.
      *
-     * @param \Magento\Framework\App\RequestInterface            $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig                      $dataConfig
-     * @param \Magento\Store\Model\StoreManagerInterface         $storeManager
-     * @param \Magento\Framework\ObjectManagerInterface          $objectManager
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param \Magento\Framework\App\RequestInterface    $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig              $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Framework\ObjectManagerInterface  $objectManager
+     * @param \Magento\Config\Model\Config\Loader        $loader
      */
     public function __construct(
         RequestInterface $requestInterface,
         DataConfig $dataConfig,
         StoreManagerInterface $storeManager,
         ObjectManagerInterface $objectManager,
-        ScopeConfigInterface $scopeConfig
+        Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->scopeConfig   = $scopeConfig;
+        $this->configLoader  = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -88,7 +89,10 @@ class RPIntegrateManagement extends ServiceAbstract
      */
     public function getCurrentIntegrateModel()
     {
-        $configIntegrateRpValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+        $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
+        $configIntegrateRpValue      = isset($config['xretail/pos/integrate_rp']) ?
+            $config['xretail/pos/integrate_rp']['value'] : 'none';
+
         if (is_null($this->currentIntegrateModel) && $configIntegrateRpValue != 'none') {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_RP_INTEGRATE[$configIntegrateRpValue][0]['class'];

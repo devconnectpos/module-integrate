@@ -217,7 +217,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
         if ($quote->getExtensionAttributes()) {
             $quoteGiftCards = $quote->getExtensionAttributes()->getAwGiftcardCodes();
         }
-        if (count($quoteGiftCards) > 0) {
+        if (is_array($quoteGiftCards) && count($quoteGiftCards) > 0) {
             foreach ($quoteGiftCards as $giftCard) {
                 $quoteGcData = [
                     'is_valid'             => true,

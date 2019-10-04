@@ -7,13 +7,13 @@
 
 namespace SM\Integrate\Model;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Integrate\StoreCredit\Contract\StoreCreditIntegrateInterface;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
+use Magento\Config\Model\Config\Loader;
 
 /**
  * Class StoreCreditIntegrateManagement
@@ -45,9 +45,9 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
      */
     private $objectManager;
     /**
-     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     * @var \Magento\Config\Model\Config\Loader
      */
-    private $scopeConfig;
+    protected $configLoader;
 
     /**
      * StoreCreditIntegrateManagement constructor.
@@ -63,10 +63,10 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
         DataConfig $dataConfig,
         StoreManagerInterface $storeManager,
         ObjectManagerInterface $objectManager,
-        ScopeConfigInterface $scopeConfig
+        Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->scopeConfig   = $scopeConfig;
+        $this->configLoader  = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -75,7 +75,9 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
      */
     public function getCurrentIntegrateModel()
     {
-        $configIntegrateStoreCreditValue = $this->scopeConfig->getValue('xretail/pos/integrate_store_credit');
+        $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
+        $configIntegrateStoreCreditValue      = isset($config['xretail/pos/integrate_store_credit']) ?
+            $config['xretail/pos/integrate_store_credit']['value'] : 'none';
         if (is_null($this->currentIntegrateModel)) {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_STORE_CREDIT_INTEGRATE[$configIntegrateStoreCreditValue][0]['class'];

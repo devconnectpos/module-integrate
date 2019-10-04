@@ -11,6 +11,7 @@ namespace SM\Integrate\Helper;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Module\ModuleListInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Config\Model\Config\Loader;
 
 /**
  * Class Data
@@ -40,6 +41,11 @@ class Data
 
     private $isIntegrateGcPWA;
     private $isIntegrateRpPWA;
+    /**
+     * @var \Magento\Config\Model\Config\Loader
+     */
+    protected $configLoader;
+    protected $configData;
 
     /**
      * Data constructor.
@@ -47,16 +53,29 @@ class Data
      * @param \Magento\Framework\ObjectManagerInterface          $objectManager
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Framework\Module\ModuleListInterface      $moduleList
+     * @param \Magento\Config\Model\Config\Loader                $loader
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
         ScopeConfigInterface $scopeConfig,
-        ModuleListInterface $moduleList
+        ModuleListInterface $moduleList,
+        Loader $loader
     )
     {
         $this->objectManager = $objectManager;
         $this->scopeConfig   = $scopeConfig;
         $this->moduleList    = $moduleList;
+        $this->configLoader  = $loader;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getConfigLoaderData() {
+        if ($this->configData === null) {
+            $this->configData = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
+        }
+        return $this->configData;
     }
 
     /**
@@ -65,7 +84,8 @@ class Data
     public function isIntegrateRP()
     {
         if (is_null($this->isIntegrateRp)) {
-            $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+            $config = $this->getConfigLoaderData();
+            $configValue          = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
             if (!!$configValue && $configValue !== 'none') {
                 if ($configValue === 'aheadWorks' && $this->isAHWRewardPoints()) {
                     $this->isIntegrateRp = true;
@@ -120,7 +140,9 @@ class Data
     public function isIntegrateStoreCredit()
     {
         if (is_null($this->isIntegrateStoreCredit)) {
-            $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_store_credit');
+            $config      = $this->getConfigLoaderData();
+            $configValue = isset($config['xretail/pos/integrate_store_credit']) ? $config['xretail/pos/integrate_store_credit']['value'] : 'none';
+
             $this->isIntegrateStoreCredit = !!$configValue && $configValue !== 'none';
         }
 
@@ -133,7 +155,8 @@ class Data
     public function isIntegrateGC()
     {
         if (is_null($this->isIntegrateGc)) {
-            $configValue          = $this->scopeConfig->getValue('xretail/pos/integrate_gc');
+            $config      = $this->getConfigLoaderData();
+            $configValue = isset($config['xretail/pos/integrate_gc']) ? $config['xretail/pos/integrate_gc']['value'] : 'none';
             if (!!$configValue && $configValue !== 'none') {
                 if ($configValue === 'aheadWorks' && $this->isAHWGiftCardxist()) {
                     $this->isIntegrateGc = true;
@@ -154,7 +177,8 @@ class Data
     public function isIntegrateMultipleWareHouse()
     {
         if (is_null($this->isIntegrateMultipleWareHouse)) {
-            $configValue          = $this->scopeConfig->getValue('xretail/pos/integrate_wh');
+            $config      = $this->getConfigLoaderData();
+            $configValue = isset($config['xretail/pos/integrate_wh']) ? $config['xretail/pos/integrate_wh']['value'] : 'none';
             if (!!$configValue && $configValue !== 'none') {
                 if ($configValue === 'bms' && $this->isIntegrateWH()) {
                     $this->isIntegrateMultipleWareHouse = true;
@@ -179,44 +203,69 @@ class Data
         return !!$this->moduleList->getOne("BoostMyShop_AdvancedStock");
     }
 
+    /**
+     * @return bool
+     */
     public function isMagentoInventory()
     {
         return !!$this->moduleList->getOne("Magento_Inventory");
     }
 
+    /**
+     * @return bool
+     */
     public function isAHWGiftCardxist()
     {
         return !!$this->moduleList->getOne("Aheadworks_Giftcard");
     }
 
+    /**
+     * @return bool
+     */
     public function isAHWRewardPoints()
     {
-        $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
         return !!$this->moduleList->getOne("Aheadworks_RewardPoints") && $configValue === 'aheadWorks';
     }
 
+    /**
+     * @return bool
+     */
     public function isAHWRewardPointsExist()
     {
         return !!$this->moduleList->getOne("Aheadworks_RewardPoints");
     }
 
+    /**
+     * @return bool
+     */
     public function isGiftCardMagento2EE()
     {
         return !!$this->moduleList->getOne("Magento_GiftCardAccount");
     }
 
+    /**
+     * @return bool
+     */
     public function isRewardPointMagento2EE()
     {
-        $configValue = $this->scopeConfig->getValue('xretail/pos/integrate_rp');
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
         return !!$this->moduleList->getOne("Magento_Reward") && $configValue === 'mage2_ee';
     }
 
+    /**
+     * @return bool
+     */
     public function isRewardPointMagento2EEExist()
     {
         return !!$this->moduleList->getOne("Magento_Reward");
     }
 
-
+    /**
+     * @return bool
+     */
     public function isExistStoreCreditMagento2EE()
     {
         return !!$this->moduleList->getOne("Magento_CustomerBalance");
@@ -230,6 +279,9 @@ class Data
         return $this->objectManager->get('SM\Integrate\Model\RPIntegrateManagement');
     }
 
+    /**
+     * @return mixed
+     */
     public function getGcIntegrateManagement()
     {
         return $this->objectManager->get('SM\Integrate\Model\GCIntegrateManagement');
