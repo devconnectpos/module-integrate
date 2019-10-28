@@ -12,6 +12,7 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Model\DataObject;
@@ -332,13 +333,22 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     public function isProductSalable($product)
     {
         $stockId = $this->getStockId();
-        return $this->objectManager->create(
-            \Magento\InventorySalesApi\Api\IsProductSalableForRequestedQtyInterface::class
-        )->execute(
-            $product['sku'],
-            $stockId,
-            $product['qty_ordered']
-        )->isSalable();
+        $stockItemToCheck = $product['stock_item_to_check'];
+        $isSalable = true;
+        foreach ($stockItemToCheck as $key  => $value) {
+            $childProduct = $this->productRepository->getById($value);
+            $isSalableItem = $this->objectManager->create(
+                \Magento\InventorySalesApi\Api\IsProductSalableForRequestedQtyInterface::class
+            )->execute(
+                $childProduct->getSku(),
+                $stockId,
+                $product['qty_ordered']
+            )->isSalable();
+            if (!$isSalableItem) {
+                $isSalable = false;
+            }
+        }
+        return $isSalable;
     }
 
     /**
