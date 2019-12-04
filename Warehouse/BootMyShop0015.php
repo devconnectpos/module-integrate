@@ -107,8 +107,8 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
                            "physical_quantity"  => "wi_physical_quantity",
                            "available_quantity" => "wi_available_quantity"
                        ]
-                   )
-                   ->where("(e.type_id = 'simple'" . " AND " . "warehouse_item.wi_available_quantity > 0) OR e.type_id <> 'simple'");
+                   );
+                   //->where("(e.type_id = 'simple'" . " AND " . "warehouse_item.wi_available_quantity > 0) OR e.type_id <> 'simple'");
 
         return $collection;
     }
@@ -218,9 +218,12 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         $defaultStock = $this->productStock->getStock($product, 0);
 
         $warehouseStockItem = $item->getData('available_quantity');
-
-        if ($warehouseStockItem) {
+        if (null !== $warehouseStockItem) {
             $defaultStock['qty'] = $warehouseStockItem;
+        }
+        $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
+        if (in_array($product->getData('type_id'), $listType) && $warehouseStockItem <= 0) {
+            $defaultStock['is_in_stock'] = 0;
         }
 
         return $defaultStock;
