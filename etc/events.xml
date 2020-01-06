@@ -28,9 +28,6 @@
     <event name="model_save_after">
         <observer name="handle_mass_update_stock" instance="SM\Integrate\Warehouse\Observer\HandleMassUpdateStock"/>
     </event>
-    <event name="sales_order_creditmemo_save_after">
-        <observer name="magento_customerbalance" instance="SM\Integrate\Observer\StoreCredit\Magento2EE\CreditmemoSaveAfterObserver"/>
-    </event>
     <event name="create_store_credit_for_order_refund_to_store_credit">
         <observer name="create_store_credit_for_order_refund_to_store_credit"
                   instance="SM\Integrate\Observer\StoreCredit\Magento2EE\RefundToStoreCredit\CreditmemoSaveAfterObserver"/>
