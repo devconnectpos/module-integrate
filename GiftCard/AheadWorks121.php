@@ -39,6 +39,9 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
      */
     public function saveGCDataBeforeQuoteCollect($giftcardDatas)
     {
+        if ($this->getQuote()->getItems() === null) {
+            $this->getQuote()->setItems([]);
+        }
         foreach ($giftcardDatas as $giftData) {
             if (isset($giftData['is_delete']) && $giftData['is_delete'] === true) {
                 $this->removeGiftCard($giftData);
