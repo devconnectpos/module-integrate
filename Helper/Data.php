@@ -174,6 +174,36 @@ class Data
     /**
      * @return bool
      */
+    public function isIntegrateAcumaticaCloudERP()
+    {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_cloud_erp']) ? $config['xretail/pos/integrate_cloud_erp']['value'] : 'none';
+        return $configValue === 'acumatica';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isIntegrateStorePickUpExtension()
+    {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_store_pick_up_extension']) ? $config['xretail/pos/integrate_store_pick_up_extension']['value'] : 'none';
+        return $configValue === 'mageworx';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isIntegrateRMAExtension()
+    {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rma_extension']) ? $config['xretail/pos/integrate_rma_extension']['value'] : 'none';
+        return $configValue === 'aheadWorks';
+    }
+
+    /**
+     * @return bool
+     */
     public function isIntegrateMultipleWareHouse()
     {
         if (is_null($this->isIntegrateMultipleWareHouse)) {
@@ -211,6 +241,29 @@ class Data
         return !!$this->moduleList->getOne("Magento_Inventory");
     }
 
+    /**
+     * @return bool
+     */
+    public function isExistPektsekyeOptionBundle()
+    {
+        return !!$this->moduleList->getOne("Pektsekye_OptionBundle");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExistMageWorx()
+    {
+        return !!$this->moduleList->getOne("MageWorx_Locations");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExistAheadWorksRMA()
+    {
+        return !!$this->moduleList->getOne("Aheadworks_Rma");
+    }
     /**
      * @return bool
      */
@@ -301,5 +354,21 @@ class Data
     public function getStoreCreditIntegrateManagement()
     {
         return $this->objectManager->get('SM\Integrate\Model\StoreCreditIntegrateManagement');
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExistKensiumCart()
+    {
+        return !!$this->moduleList->getOne("Kensium_Cart");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isExistSnmportalPdfprint()
+    {
+        return !!$this->moduleList->getOne("Snmportal_Pdfprint");
     }
 }
