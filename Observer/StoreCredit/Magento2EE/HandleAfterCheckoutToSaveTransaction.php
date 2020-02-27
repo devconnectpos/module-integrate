@@ -14,6 +14,8 @@ use SM\Payment\Helper\PaymentHelper;
 use SM\Payment\Model\RetailPayment;
 use SM\Shift\Helper\Data;
 use SM\Shift\Model\RetailTransactionFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Directory\Model\Currency;
 
 class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
 {
@@ -35,17 +37,30 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
      * @var \SM\Integrate\Helper\Data
      */
     private $integrateHelper;
+    /**
+     * @var \Magento\Store\Model\StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
+     * @var Magento\Directory\Model\Currency
+     */
+    private $currencyModel;
 
     public function __construct(
         RetailTransactionFactory $transactionFactory,
         Data $shiftHelperData,
         PaymentHelper $paymentHelper,
+        StoreManagerInterface $storeManager,
+        Currency $currencyModel,
         \SM\Integrate\Helper\Data $integrateHelper
     ) {
         $this->shiftHelperData          = $shiftHelperData;
         $this->retailTransactionFactory = $transactionFactory;
         $this->paymentHelper            = $paymentHelper;
         $this->integrateHelper          = $integrateHelper;
+        $this->storeManager             = $storeManager;
+        $this->currencyModel            = $currencyModel;
     }
 
     /**
@@ -58,7 +73,10 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
     {
         /** @var Order $order */
         $order = $observer->getData('order');
-
+        $baseCurrencyCode    = $this->storeManager->getStore()->getBaseCurrencyCode();
+        $currentCurrencyCode = $this->storeManager->getStore($order->getData('store_id'))->getCurrentCurrencyCode();
+        $allowedCurrencies   = $this->currencyModel->getConfigAllowCurrencies();
+        $rates               = $this->currencyModel->getCurrencyRates($baseCurrencyCode, array_values($allowedCurrencies));
         if ($this->integrateHelper->isIntegrateStoreCredit()
             && $this->integrateHelper->isExistStoreCreditMagento2EE()) {
             if ($order->getData('retail_id') && $order->getData('customer_balance_amount')) {
@@ -80,6 +98,8 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                                 ->setData('is_purchase', 1)
                                 ->setData('user_name', $order->getData('user_name'))
                                 ->setData('order_id', $order->getEntityId())
+                                ->setData('base_amount', isset($rates[$currentCurrencyCode]) && $rates[$currentCurrencyCode] != 0 ? $order->getData('customer_balance_amount')
+                                    / $rates[$currentCurrencyCode] : null)
                                 ->save();
                 }
             }

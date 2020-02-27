@@ -14,6 +14,8 @@ use SM\Payment\Helper\PaymentHelper;
 use SM\Payment\Model\RetailPayment;
 use SM\Shift\Helper\Data;
 use SM\Shift\Model\RetailTransactionFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Directory\Model\Currency;
 
 class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
 {
@@ -31,22 +33,35 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
      * @var \SM\Payment\Helper\PaymentHelper
      */
     private $paymentHelper;
+    /**
+     * @var \Magento\Store\Model\StoreManagerInterface
+     */
+    private $storeManager;
+    /**
+     * @var Magento\Directory\Model\Currency
+     */
+    private $currencyModel;
 
     /**
      * HandleAfterCheckoutToSaveTransaction constructor.
-     *
-     * @param \SM\Shift\Model\RetailTransactionFactory $transactionFactory
-     * @param \SM\Shift\Helper\Data                    $shiftHelperData
-     * @param \SM\Payment\Helper\PaymentHelper         $paymentHelper
+     * @param RetailTransactionFactory $transactionFactory
+     * @param Data $shiftHelperData
+     * @param StoreManagerInterface $storeManager
+     * @param Currency $currencyModel
+     * @param PaymentHelper $paymentHelper
      */
     public function __construct(
         RetailTransactionFactory $transactionFactory,
         Data $shiftHelperData,
+        StoreManagerInterface $storeManager,
+        Currency $currencyModel,
         PaymentHelper $paymentHelper
     ) {
         $this->shiftHelperData          = $shiftHelperData;
         $this->retailTransactionFactory = $transactionFactory;
         $this->paymentHelper            = $paymentHelper;
+        $this->storeManager             = $storeManager;
+        $this->currencyModel            = $currencyModel;
     }
 
     /**
@@ -59,7 +74,10 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
     {
         /** @var Order $order */
         $order = $observer->getData('order');
-
+        $baseCurrencyCode    = $this->storeManager->getStore()->getBaseCurrencyCode();
+        $currentCurrencyCode = $this->storeManager->getStore($order->getData('store_id'))->getCurrentCurrencyCode();
+        $allowedCurrencies   = $this->currencyModel->getConfigAllowCurrencies();
+        $rates               = $this->currencyModel->getCurrencyRates($baseCurrencyCode, array_values($allowedCurrencies));
         if ($order->getData('retail_id') && $order->getData('aw_giftcard_amount')) {
             $outletId          = $order->getData('outlet_id');
             $registerId        = $order->getData('register_id');
@@ -76,6 +94,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
                             ->setData('is_purchase', 1)
                             ->setData('user_name', $order->getData('user_name'))
                             ->setData('order_id', $order->getEntityId())
+                            ->setData('base_amount', isset($rates[$currentCurrencyCode]) && $rates[$currentCurrencyCode] != 0 ? $order->getData('aw_giftcard_amount') / $rates[$currentCurrencyCode] : null)
                             ->save();
             }
         }
