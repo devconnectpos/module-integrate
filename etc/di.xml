@@ -22,4 +22,7 @@
     <type name="Magento\InventoryCatalog\Model\BulkInventoryTransfer">
         <plugin name="sync_product_transfer_source" type="SM\Integrate\Warehouse\Plugin\SyncProductTransferSource" sortOrder="1" />
     </type>
+    <type name="Aheadworks\Giftcard\Model\Service\PoolService">
+        <plugin name="set_gift_card_code" type="\SM\Integrate\GiftCard\Plugin\SetGiftCardCode"/>
+    </type>
 </config>

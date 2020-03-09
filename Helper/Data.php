@@ -124,7 +124,7 @@ class Data
     {
         if (is_null($this->isIntegrateGcPWA)) {
             $configValue          = $this->scopeConfig->getValue('pwa/integrate/pwa_integrate_gift_card');
-            if (!!$configValue && $configValue === 'true' && $this->isAHWGiftCardxist()) {
+            if (!!$configValue && $configValue === 'true' && $this->isAHWGiftCardExist()) {
                 $this->isIntegrateGcPWA = true;
             } else {
                 $this->isIntegrateGcPWA = false;
@@ -158,7 +158,7 @@ class Data
             $config      = $this->getConfigLoaderData();
             $configValue = isset($config['xretail/pos/integrate_gc']) ? $config['xretail/pos/integrate_gc']['value'] : 'none';
             if (!!$configValue && $configValue !== 'none') {
-                if ($configValue === 'aheadWorks' && $this->isAHWGiftCardxist()) {
+                if ($configValue === 'aheadWorks' && $this->isAHWGiftCardExist()) {
                     $this->isIntegrateGc = true;
                 } elseif ($configValue === 'mage2_ee' && $this->isGiftCardMagento2EE()) {
                     $this->isIntegrateGc = true;
@@ -267,7 +267,7 @@ class Data
     /**
      * @return bool
      */
-    public function isAHWGiftCardxist()
+    public function isAHWGiftCardExist()
     {
         return !!$this->moduleList->getOne("Aheadworks_Giftcard");
     }

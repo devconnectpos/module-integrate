@@ -10,6 +10,9 @@ namespace SM\Integrate\Model;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use SM\Core\Api\Data\AwCodePool;
+use SM\Core\Api\Data\AwCodePool\AwGcCode;
+use SM\Integrate\Helper\Data as IntegrateHelper;
 use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
@@ -49,25 +52,32 @@ class GCIntegrateManagement extends ServiceAbstract
      * @var \Magento\Config\Model\Config\Loader
      */
     protected $configLoader;
+    /**
+     * @var IntegrateHelper
+     */
+    private $integrateHelper;
 
     /**
      * GCIntegrateManagement constructor.
      *
-     * @param \Magento\Framework\App\RequestInterface            $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig                      $dataConfig
-     * @param \Magento\Store\Model\StoreManagerInterface         $storeManager
-     * @param \Magento\Framework\ObjectManagerInterface          $objectManager
-     * @param \Magento\Config\Model\Config\Loader                $loader
+     * @param \Magento\Framework\App\RequestInterface $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig $dataConfig
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param \Magento\Config\Model\Config\Loader $loader
+     * @param IntegrateHelper $integrateHelper
      */
     public function __construct(
         RequestInterface $requestInterface,
         DataConfig $dataConfig,
         StoreManagerInterface $storeManager,
         ObjectManagerInterface $objectManager,
-        Loader $loader
+        Loader $loader,
+        IntegrateHelper $integrateHelper
     ) {
         $this->objectManager = $objectManager;
         $this->configLoader  = $loader;
+        $this->integrateHelper = $integrateHelper;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -122,15 +132,80 @@ class GCIntegrateManagement extends ServiceAbstract
 
     public function getGCCodePool()
     {
-        if ($m = $this->getCurrentIntegrateModel()) {
-            return $m->getGCCodePool();
+        $class = self::$LIST_GC_INTEGRATE['aheadWorks'][0]['class'];
+        if ($this->integrateHelper->isAHWGiftCardExist()) {
+            return $this->objectManager->create($class)->getGCCodePool();
         }
+
         return [];
     }
 
     public function getQuoteGCData()
     {
-        //return $this->getCurrentIntegrateModel()->getQuoteGCData()->getOutput();
         return $this->getCurrentIntegrateModel()->getQuoteGCData();
+    }
+
+
+    /**
+     * CPOS API function to get AheadWorks Gift Card code pools
+     * @return mixed
+     * @throws \ReflectionException
+     */
+    public function getAwGiftCardCodePools()
+    {
+        if (!$this->integrateHelper->isAHWGiftCardExist()) {
+            return $this->getSearchResult()
+                ->setItems([])
+                ->setSearchCriteria($this->getSearchCriteria())
+                ->getOutput();
+        }
+
+
+        $searchCriteria = $this->getSearchCriteria();
+        /** @var \Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection $collection */
+        $collection   = $this->objectManager->create('Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection');
+        $collection->setCurPage($searchCriteria->getData('currentPage'));
+        $collection->setPageSize($searchCriteria->getData('pageSize'));
+
+        if ($collection->getLastPageNumber() < (int)$searchCriteria->getData('currentPage')) {
+            return $this->getSearchResult()
+                ->setItems([])
+                ->setSearchCriteria($this->getSearchCriteria())
+                ->getOutput();
+        }
+
+        $codePools = [];
+        foreach ($collection as $item) {
+            $codePools[] = $item->getData();
+        }
+
+        $results = [];
+        foreach ($codePools as $codePool) {
+            $pool = new AwCodePool();
+            $pool->addData($codePool);
+
+            /** @var \AheadWorks\Giftcard\Model\ResourceModel\Pool\Code\Collection $codeCollection */
+            $codeCollection = $this->objectManager->create('\Aheadworks\Giftcard\Model\ResourceModel\Pool\Code\Collection');
+            $codeCollection->addFieldToFilter('pool_id', ['eq' => $pool->getId()]);
+
+            if ($codeCollection->count() === 0) {
+                continue;
+            }
+
+            $codes = [];
+            foreach ($codeCollection->getItems() as $item) {
+                $code = new AwGcCode();
+                $code->addData($item->getData());
+                $codes[] = $code->getOutput();
+            }
+
+            $pool->setCodes($codes);
+            $results[] = $pool;
+        }
+
+        return $this->getSearchResult()
+            ->setItems($results)
+            ->setSearchCriteria($this->getSearchCriteria())
+            ->getOutput();
     }
 }
