@@ -1,7 +1,7 @@
 <?php
 
 namespace SM\Integrate\GiftCard\Plugin;
-if (class_exists('Aheadworks\Giftcard\Api\PoolCodeRepositoryInterface')) {
+if (interface_exists('Aheadworks\Giftcard\Api\PoolCodeRepositoryInterface')) {
     class SetGiftCardCode
     {
         /**
