@@ -371,4 +371,19 @@ class Data
     {
         return !!$this->moduleList->getOne("Snmportal_Pdfprint");
     }
+    
+    public function isIntegrateMageShip()
+    {
+	    return !!$this->moduleList->getOne("Maurisource_MageShip");
+    }
+    
+    public function isIntegrateShipperHQ()
+    {
+	    return !!$this->moduleList->getOne("ShipperHQ_Shipper");
+    }
+    
+    public function isIntegrateMatrixRate()
+    {
+	    return !!$this->moduleList->getOne("WebShopApps_MatrixRate");
+    }
 }
