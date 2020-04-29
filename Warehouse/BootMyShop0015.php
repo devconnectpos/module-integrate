@@ -222,8 +222,13 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             $defaultStock['qty'] = $warehouseStockItem;
         }
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
-        if (in_array($product->getData('type_id'), $listType) && $warehouseStockItem <= 0) {
-            $defaultStock['is_in_stock'] = 0;
+        if (in_array($product->getData('type_id'), $listType)) {
+        	if ($warehouseStockItem > 0
+		        || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+		        $defaultStock['is_in_stock'] = 1;
+	        } else {
+		        $defaultStock['is_in_stock'] = 0;
+	        }
         }
 
         return $defaultStock;
