@@ -45,28 +45,36 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
      * @var \SM\Integrate\RewardPoint\Magento2EE\Earning
      */
     private $earningCalculator;
-
-    /**
-     * Magento2EE constructor.
-     *
-     * @param \Magento\Framework\ObjectManagerInterface    $objectManager
-     * @param \Magento\Store\Model\StoreManagerInterface   $storeManager
-     * @param \SM\Integrate\Helper\Data                    $integrateHelperData
-     * @param \SM\Integrate\RewardPoint\Magento2EE\Earning $earning
-     * @param \Magento\Customer\Model\CustomerFactory      $customerFactory
-     */
+	/**
+	 * @var \Magento\Framework\App\Config\ScopeConfigInterface
+	 */
+	private $scopeConfig;
+	
+	/**
+	 * Magento2EE constructor.
+	 *
+	 * @param \Magento\Framework\ObjectManagerInterface $objectManager
+	 * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+	 * @param \SM\Integrate\Helper\Data $integrateHelperData
+	 * @param \SM\Integrate\RewardPoint\Magento2EE\Earning $earning
+	 * @param \Magento\Customer\Model\CustomerFactory $customerFactory
+	 * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+	 */
     public function __construct(
         ObjectManagerInterface $objectManager,
         StoreManagerInterface $storeManager,
         Data $integrateHelperData,
         Earning $earning,
-        \Magento\Customer\Model\CustomerFactory $customerFactory
+        \Magento\Customer\Model\CustomerFactory $customerFactory,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
         $this->earningCalculator   = $earning;
         $this->storeManager       = $storeManager;
         $this->integrateHelperData = $integrateHelperData;
         $this->customerFactory = $customerFactory;
-        parent::__construct($objectManager);
+	    $this->scopeConfig = $scopeConfig;
+	
+	    parent::__construct($objectManager);
     }
 
     /**
@@ -98,6 +106,13 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
 
         $quoteRpData      = new RewardPointQuoteData();
         $rpEarn = $this->earningCalculator->calculation($this->getQuote(), $rateCurrency, $ratePoint);
+        
+	    $minPointsBalance = (int)$this->scopeConfig->getValue(
+		    \Magento\Reward\Model\Reward::XML_PATH_MIN_POINTS_BALANCE,
+		    \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+		    $this->getQuote()->getStoreId()
+	    );
+	    
         $quoteRpData->addData(
             [
                 'use_reward_point'                  => $this->getQuote()->getUseRewardPoints() === true,
@@ -108,7 +123,8 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
                 'reward_point_discount_amount'      => -($this->getQuote()->getData('reward_currency_amount')),
                 'base_reward_point_discount_amount' => -($this->getQuote()->getData('base_reward_currency_amount')),
                 'reward_point_earn'                 => $rpEarn,
-                'customer_reward_points_once_min_balance' => ''
+                'customer_reward_points_once_min_balance' => $minPointsBalance,
+	            'can_use_reward_points'             => $minPointsBalance <= $customerRPDetail->getPointsBalance()
             ]
         );
         return $quoteRpData;

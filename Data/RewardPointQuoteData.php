@@ -62,4 +62,9 @@ class RewardPointQuoteData extends ApiDataAbstract
     {
         return $this->getData('customer_reward_points_once_min_balance');
     }
+    
+    public function getCanUseRewardPoints()
+    {
+    	return $this->getData('can_use_reward_points');
+    }
 }

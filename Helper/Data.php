@@ -386,4 +386,16 @@ class Data
     {
 	    return !!$this->moduleList->getOne("WebShopApps_MatrixRate");
     }
+	
+	public function isExistBoldOrderComment()
+	{
+		return !!$this->moduleList->getOne("Bold_OrderComment");
+	}
+	
+	public function isIntegrateBoldOrderComment()
+	{
+		$config      = $this->getConfigLoaderData();
+		$configValue = isset($config['xretail/pos/integrate_order_comment_extensions']) ? $config['xretail/pos/integrate_order_comment_extensions']['value'] : 'none';
+		return $this->isExistBoldOrderComment() && $configValue === 'boldCommerce';
+	}
 }

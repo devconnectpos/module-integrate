@@ -164,13 +164,12 @@ class WarehouseIntegrateManagement extends ServiceAbstract
     /**
      * @param                               $product
      * @param                               $warehouseId
-     * @param \Magento\Framework\DataObject $item
      *
      * @return mixed
      */
-    public function getStockItem($product, $warehouseId, $item = null)
+    public function getStockItem($product, $warehouseId)
     {
-        return $this->getCurrentIntegrateModel()->getStockItem($product, $warehouseId, $item);
+        return $this->getCurrentIntegrateModel()->getStockItem($product, $warehouseId);
     }
 
     /**
