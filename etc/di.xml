@@ -25,4 +25,6 @@
     <type name="Aheadworks\Giftcard\Model\Service\PoolService">
         <plugin name="set_gift_card_code" type="\SM\Integrate\GiftCard\Plugin\SetGiftCardCode"/>
     </type>
+
+    <preference for="Magento\Reward\Model\Reward" type="SM\Integrate\RewardPoint\Magento2EE\Reward" />
 </config>

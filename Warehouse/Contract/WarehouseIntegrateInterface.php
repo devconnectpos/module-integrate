@@ -44,11 +44,10 @@ interface WarehouseIntegrateInterface
     /**
      * @param $product
      * @param $warehouseId
-     * @param $item
      *
      * @return mixed
      */
-    public function getStockItem($product, $warehouseId, $item);
+    public function getStockItem($product, $warehouseId);
 
     /**
      * @param $searchCriteria
