@@ -135,7 +135,8 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
                 'base_reward_point_discount_amount' => $this->getQuote()->getData('base_aw_reward_points_amount'),
                 'reward_point_earn'                 => $rpEarn,
                 'reward_point_earn_amount'          => $rpEarnAmount,
-                'customer_reward_points_once_min_balance' => $customerRPDetail->getCustomerRewardPointsOnceMinBalance()
+                'customer_reward_points_once_min_balance' => $customerRPDetail->getCustomerRewardPointsOnceMinBalance(),
+	            'can_use_reward_points'             => $customerRPDetail->getCustomerRewardPointsOnceMinBalance() <= $customerRPDetail->getCustomerRewardPointsBalance()
             ]
         );
         return $quoteRpData;

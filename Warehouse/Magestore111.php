@@ -137,7 +137,7 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
         return $collection;
     }
 
-    public function getStockItem($product, $warehouseId, $item = null)
+    public function getStockItem($product, $warehouseId)
     {
         return $this->productStock->getStock($product, $warehouseId);
     }
