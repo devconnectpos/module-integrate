@@ -116,8 +116,10 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
         $websiteId = $this->storeManager->getStore($creditmemo->getStoreId())->getWebsiteId();
 
         $rate = $this->rateCalculator->getSpendRate($websiteId);
-        $earned = $order->getData('reward_points_earned');
-        $cancelledPoints = round($earned * (float)($totalRefundedQty / $totalOrderedQty));
+	    $cancelledPoints = $order->getData('reward_points_earned');
+        if ($totalRefundedQty < $totalOrderedQty) {
+        	$cancelledPoints = $this->rateCalculator->calculateEarnPoints($customerId, $creditmemo->getGrandTotal(), $websiteId);
+        }
         $cancelledPointsAmount = $this->rateCalculator->calculateRewardDiscount(
             $customerId,
             $cancelledPoints,
