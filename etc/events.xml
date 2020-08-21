@@ -32,4 +32,12 @@
         <observer name="create_store_credit_for_order_refund_to_store_credit"
                   instance="SM\Integrate\Observer\StoreCredit\Magento2EE\RefundToStoreCredit\CreditmemoSaveAfterObserver"/>
     </event>
+
+    <!-- AheadWorks reward points -->
+    <event name="adminhtml_sales_order_creditmemo_register_before">
+        <observer name="add_cancelled_reward_points_info_before_load" instance="SM\Integrate\Observer\RewardPoint\Aw\HandleCreditmemoCancelledPoints" />
+    </event>
+    <event name="sales_order_creditmemo_save_before">
+        <observer name="add_cancelled_reward_points_info_before_save" instance="SM\Integrate\Observer\RewardPoint\Aw\HandleCreditmemoCancelledPoints" />
+    </event>
 </config>
