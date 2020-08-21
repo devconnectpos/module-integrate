@@ -7,7 +7,6 @@
 
 namespace SM\Integrate\RewardPoint\Aheadworks;
 
-use Aheadworks\RewardPoints\Model\Source\Calculation\PointsEarning;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Model\Quote;
 
@@ -26,37 +25,11 @@ class Earning
 
     public function calculation(Quote $quote, $customerId, $websiteId = null)
     {
-        $baseSubTotal     = 0;
-        $shippingDiscount = $quote->getShippingAddress()->getBaseShippingDiscountAmount()
-                            + $quote->getBaseAwRewardPointsShippingAmount();
-
-        switch ($this->getConfigAheadworks()->getPointsEarningCalculation($websiteId)) {
-            case PointsEarning::BEFORE_TAX:
-                $baseSubTotal = $quote->getBaseGrandTotal()
-                                - $quote->getShippingAddress()->getBaseShippingAmount()
-                                + $shippingDiscount
-                                - $quote->getShippingAddress()->getBaseTaxAmount();
-                break;
-            case PointsEarning::AFTER_TAX:
-                $baseSubTotal = $quote->getBaseGrandTotal()
-                                - $quote->getShippingAddress()->getBaseShippingAmount()
-                                + $shippingDiscount;
-                break;
-        }
-
-        // if order use store credit, then baseSubTotal must subtract the store credit amount
-        if ($quote->getData('customer_balance_amount_used')) {
-            $baseSubTotal -= $quote->getData('customer_balance_amount_used');
-        }
-
-        if ($baseSubTotal <= 0) {
-            return 0;
-        }
-
-        return $this->getRateCalculator()->calculateEarnPoints($customerId, $baseSubTotal, $websiteId);
+        return $this->getEarningCalculator()->calculationByQuote($quote, $customerId, $websiteId)->getPoints();
     }
 
-    public function calculationAmount(Quote $quote, $customerId, $websiteId = null) {
+    public function calculationAmount(Quote $quote, $customerId, $websiteId = null)
+    {
         return $this->getRateCalculator()->calculateRewardDiscount($customerId, $this->calculation($quote, $customerId, $websiteId), $websiteId);
     }
 
@@ -74,5 +47,10 @@ class Earning
     protected function getConfigAheadworks()
     {
         return $this->objectManager->get('Aheadworks\RewardPoints\Model\Config');
+    }
+
+    protected function getEarningCalculator()
+    {
+        return $this->objectManager->get('Aheadworks\RewardPoints\Model\Calculator\Earning');
     }
 }
