@@ -78,4 +78,11 @@ interface WarehouseIntegrateInterface
      * @return mixed
      */
     public function returnItemToStock($item, $transaction);
+
+    /**
+     * @param $searchCriteria
+     *
+     * @return mixed
+     */
+    public function getAllWarehouseStockForSpecifiedProduct($searchCriteria);
 }
