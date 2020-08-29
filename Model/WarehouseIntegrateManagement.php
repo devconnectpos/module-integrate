@@ -178,6 +178,11 @@ class WarehouseIntegrateManagement extends ServiceAbstract
      */
     public function getWarehouseItem()
     {
+        if ($this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) {
+            return $this->getCurrentIntegrateModel()
+                        ->getAllWarehouseStockForSpecifiedProduct($this->getSearchCriteria())
+                        ->getOutput();
+        }
         $items      = [];
         $collection = $this->getOutletCollection();
         foreach ($collection as $outlet) {

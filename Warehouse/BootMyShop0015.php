@@ -55,6 +55,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             "company"        => "w_company_name",
             "street1"        => "w_street1",
             "street2"        => "w_street2",
+            "website_id"     => "w_website"
         ];
     /**
      * @var \Magento\Store\Model\StoreManagerInterface
@@ -307,6 +308,30 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         } else {
             return [];
         }
+    }
+
+    public function getAllWarehouseStockForSpecifiedProduct($searchCriteria)
+    {
+        $items        = [];
+        $searchResult = new SearchResult();
+        $warehouseCollection = $this->getWarehouseCollection($searchCriteria);
+        foreach ($warehouseCollection as $warehouse) {
+            $_data = [
+                "warehouse_name" => $warehouse->getData("w_name"),
+                "warehouse_id" => $warehouse->getData("w_id"),
+                "website_id"   => $warehouse->getData("w_website"),
+                "warehouse_stock" => $this->getWarehouseStockItem(
+                    $searchCriteria->getData("product_id"),
+                    $warehouse->getData("w_id")
+                )
+            ];
+            $items[] = $_data;
+        }
+
+        return $searchResult
+            ->setItems($items)
+            ->setTotalCount($warehouseCollection->getSize())
+            ->setLastPageNumber($warehouseCollection->getLastPageNumber());
     }
 
     public function isProductSalable($product)
