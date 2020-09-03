@@ -178,4 +178,6 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
     {
         // TODO: Implement returnItemToStock() method.
     }
+
+    public function getAllWarehouseStockForSpecifiedProduct($searchCriteria){}
 }

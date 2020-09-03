@@ -467,4 +467,6 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
         return $sourceItemMap;
     }
+
+    public function getAllWarehouseStockForSpecifiedProduct($searchCriteria){}
 }
