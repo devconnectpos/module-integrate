@@ -8,10 +8,10 @@
 
 namespace SM\Integrate\Helper;
 
+use Magento\Config\Model\Config\Loader;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Module\ModuleListInterface;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Config\Model\Config\Loader;
 
 /**
  * Class Data
@@ -20,7 +20,6 @@ use Magento\Config\Model\Config\Loader;
  */
 class Data
 {
-
     private $isIntegrateRp;
     /**
      * @var \Magento\Framework\ObjectManagerInterface
@@ -60,8 +59,7 @@ class Data
         ScopeConfigInterface $scopeConfig,
         ModuleListInterface $moduleList,
         Loader $loader
-    )
-    {
+    ) {
         $this->objectManager = $objectManager;
         $this->scopeConfig   = $scopeConfig;
         $this->moduleList    = $moduleList;
@@ -71,7 +69,8 @@ class Data
     /**
      * @return mixed
      */
-    private function getConfigLoaderData() {
+    private function getConfigLoaderData()
+    {
         if ($this->configData === null) {
             $this->configData = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
         }
@@ -371,37 +370,42 @@ class Data
     {
         return !!$this->moduleList->getOne("Snmportal_Pdfprint");
     }
-    
+
     public function isIntegrateMageShip()
     {
-	    return !!$this->moduleList->getOne("Maurisource_MageShip");
+        return !!$this->moduleList->getOne("Maurisource_MageShip");
     }
-    
+
     public function isIntegrateShipperHQ()
     {
-	    return !!$this->moduleList->getOne("ShipperHQ_Shipper");
+        return !!$this->moduleList->getOne("ShipperHQ_Shipper");
     }
-    
+
     public function isIntegrateMatrixRate()
     {
-	    return !!$this->moduleList->getOne("WebShopApps_MatrixRate");
+        return !!$this->moduleList->getOne("WebShopApps_MatrixRate");
     }
-	
-	public function isExistBoldOrderComment()
-	{
-		return !!$this->moduleList->getOne("Bold_OrderComment");
-	}
-	
-	public function isIntegrateBoldOrderComment()
-	{
-		$config      = $this->getConfigLoaderData();
-		$configValue = isset($config['xretail/pos/integrate_order_comment_extensions']) ? $config['xretail/pos/integrate_order_comment_extensions']['value'] : 'none';
-		return $this->isExistBoldOrderComment() && $configValue === 'boldCommerce';
-	}
-	
-	public function isDeductRewardPointsWhenRefundWithoutReceipt()
-	{
-		$config      = $this->getConfigLoaderData();
-		return $this->isRewardPointMagento2EE() && $config['xretail/pos/deduct_rp_when_refund_without_receipt']['value'] == 1;
-	}
+
+    public function isExistBoldOrderComment()
+    {
+        return !!$this->moduleList->getOne("Bold_OrderComment");
+    }
+
+    public function isIntegrateBoldOrderComment()
+    {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_order_comment_extensions']) ? $config['xretail/pos/integrate_order_comment_extensions']['value'] : 'none';
+        return $this->isExistBoldOrderComment() && $configValue === 'boldCommerce';
+    }
+
+    public function isDeductRewardPointsWhenRefundWithoutReceipt()
+    {
+        $config      = $this->getConfigLoaderData();
+        return $this->isRewardPointMagento2EE() && $config['xretail/pos/deduct_rp_when_refund_without_receipt']['value'] == 1;
+    }
+
+    public function isExistCustomShipping()
+    {
+        return !!$this->moduleList->getOne("Magecomp_Customshipping");
+    }
 }
