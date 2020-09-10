@@ -86,9 +86,9 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
         }
 
         $this->init();
-	
-	    /** @var Creditmemo $creditmemo */
-	    $creditmemo = $observer->getData('creditmemo');
+
+        /** @var Creditmemo $creditmemo */
+        $creditmemo = $observer->getData('creditmemo');
         $order = $creditmemo->getOrder();
 
         if (!$this->config->isCancelEarnedPointsRefundOrder($order->getStore()->getWebsiteId())) {
@@ -116,9 +116,10 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
         $websiteId = $this->storeManager->getStore($creditmemo->getStoreId())->getWebsiteId();
 
         $rate = $this->rateCalculator->getSpendRate($websiteId);
-	    $cancelledPoints = $order->getData('reward_points_earned');
+        $cancelledPoints = $order->getData('reward_points_earned');
+        
         if ($totalRefundedQty < $totalOrderedQty) {
-        	$cancelledPoints = $this->rateCalculator->calculateEarnPoints($customerId, $creditmemo->getGrandTotal(), $websiteId);
+            $cancelledPoints = $this->rateCalculator->calculateEarnPoints($customerId, $creditmemo->getGrandTotal(), $websiteId);
         }
         $cancelledPointsAmount = $this->rateCalculator->calculateRewardDiscount(
             $customerId,
@@ -135,30 +136,30 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
         $residualPoints = 0;
         $residualPointsAmount = 0;
 
-        $residualPoints = abs($customerBalance - $cancelledPoints);
-        $residualPointsAmount = $this->rateCalculator->calculateRewardDiscount(
-            $customerId,
-            $residualPoints,
-            $websiteId,
-            $rate
-        );
+        if ($customerBalance < $cancelledPoints) {
+            $residualPoints = abs($customerBalance - $cancelledPoints);
+            $residualPointsAmount = $this->rateCalculator->calculateRewardDiscount(
+                $customerId,
+                $residualPoints,
+                $websiteId,
+                $rate
+            );
+        }
 
         $creditmemo->setBaseAwRewardPointsCancelled($cancelledPointsAmount);
         $creditmemo->setAwRewardPointsCancelled($cancelledPointsAmount);
         $creditmemo->setAwRewardPointsBlnceCancelled($cancelledPoints);
 
-        if ($residualPoints > 0) {
-            $creditmemo->setBaseAwRewardPointsResidual($residualPointsAmount);
-            $creditmemo->setAwRewardPointsResidual($residualPointsAmount);
-            $creditmemo->setAwRewardPointsBlnceResidual($residualPoints);
-        }
+        $creditmemo->setBaseAwRewardPointsResidual($residualPointsAmount);
+        $creditmemo->setAwRewardPointsResidual($residualPointsAmount);
+        $creditmemo->setAwRewardPointsBlnceResidual($residualPoints);
 
         if ($customerBalance < $cancelledPoints) {
             $creditmemo->setAdjustment(-$residualPointsAmount);
             $creditmemo->setAdjustmentNegative($residualPointsAmount);
         } else {
-	        $creditmemo->setAdjustment(0);
-	        $creditmemo->setAdjustmentNegative(0);
+            $creditmemo->setAdjustment(0);
+            $creditmemo->setAdjustmentNegative(0);
         }
 
         foreach ($creditmemo->getAllItems() as $item) {
@@ -168,7 +169,7 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
                 continue;
             }
 
-            $ratio = (float)($item->getQty() / $totalRefundedQty);
+            $ratio = (float)($item->getRowTotalInclTax() / $creditmemo->getGrandTotal());
             $pts = round($cancelledPoints * $ratio);
             $ptsAmount = round($cancelledPointsAmount * $ratio, 2);
             $resPts = round($residualPoints * $ratio);
