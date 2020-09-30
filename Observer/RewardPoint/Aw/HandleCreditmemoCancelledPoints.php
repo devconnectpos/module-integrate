@@ -117,7 +117,7 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
 
         $rate = $this->rateCalculator->getSpendRate($websiteId);
         $cancelledPoints = $order->getData('reward_points_earned');
-        
+
         if ($totalRefundedQty < $totalOrderedQty) {
             $cancelledPoints = $this->rateCalculator->calculateEarnPoints($customerId, $creditmemo->getGrandTotal(), $websiteId);
         }
@@ -169,7 +169,12 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
                 continue;
             }
 
-            $ratio = (float)($item->getRowTotalInclTax() / $creditmemo->getGrandTotal());
+            if ($creditmemo->getGrandTotal() === 0) {
+                $ratio = 0;
+            } else {
+                $ratio = (float)($item->getRowTotalInclTax() / $creditmemo->getGrandTotal());
+            }
+
             $pts = round($cancelledPoints * $ratio);
             $ptsAmount = round($cancelledPointsAmount * $ratio, 2);
             $resPts = round($residualPoints * $ratio);
