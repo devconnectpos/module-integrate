@@ -101,7 +101,7 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
         foreach ($creditmemo->getAllItems() as $item) {
             $orderItem = $item->getOrderItem();
 
-            if ($orderItem->isDummy()) {
+            if ($orderItem->isDummy() || $orderItem->getQtyInvoiced() <= 0) {
                 continue;
             }
 
@@ -169,7 +169,7 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
                 continue;
             }
 
-            if ($creditmemo->getGrandTotal() === 0) {
+            if ($creditmemo->getGrandTotal() == 0) {
                 $ratio = 0;
             } else {
                 $ratio = (float)($item->getRowTotalInclTax() / $creditmemo->getGrandTotal());
