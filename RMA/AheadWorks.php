@@ -2,15 +2,15 @@
 
 namespace SM\Integrate\RMA;
 
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\OrderFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Integrate\Data\XCustomFields;
 use SM\Integrate\Helper\Data;
 use SM\XRetail\Helper\DataConfig;
-use Magento\Sales\Model\Order;
-use Magento\Sales\Model\OrderFactory;
-use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\App\RequestInterface;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
 
 class AheadWorks extends ServiceAbstract
@@ -22,7 +22,7 @@ class AheadWorks extends ServiceAbstract
 
     protected $storeManager;
 
-    protected  $objectManager;
+    protected $objectManager;
 
     /**
      * @var \Magento\Sales\Model\OrderFactory
@@ -70,7 +70,8 @@ class AheadWorks extends ServiceAbstract
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
-    public function loadOrderRMAData($searchCriteria) {
+    public function loadOrderRMAData($searchCriteria)
+    {
         $searchResult   = new \SM\Core\Api\SearchResult();
         $items          = [];
         $size           = 0;
@@ -113,8 +114,6 @@ class AheadWorks extends ServiceAbstract
             ->setLastPageNumber($lastPageNumber);
     }
 
-
-
     /**
      * Check is allowed for order or not
      *
@@ -138,7 +137,8 @@ class AheadWorks extends ServiceAbstract
         return false;
     }
 
-    public function loadListCustomFields($searchCriteria) {
+    public function loadListCustomFields($searchCriteria)
+    {
         // TODO: Implement loadStoreLocationData() method.
         $searchResult   = new \SM\Core\Api\SearchResult();
         $items          = [];
@@ -157,7 +157,7 @@ class AheadWorks extends ServiceAbstract
             $size                = $customFields->getTotalCount();
             if (0 === $size) {
                 $lastPageNumber = 1;
-            } else if ($searchCriteria->getData('pageSize')) {
+            } elseif ($searchCriteria->getData('pageSize')) {
                 $lastPageNumber = ceil($size / $searchCriteria->getData('pageSize'));
             } else {
                 $lastPageNumber = 1;
@@ -178,7 +178,6 @@ class AheadWorks extends ServiceAbstract
                         $options[] = $option->getData();
                     }
                     foreach ($customField['frontend_labels'] as $frontend_label) {
-
                         $frontedLabels[] = [
                             'store_id'=>$frontend_label->getStoreId(),
                             'label'=>$frontend_label->getValue()
@@ -200,7 +199,8 @@ class AheadWorks extends ServiceAbstract
             ->setLastPageNumber($lastPageNumber);
     }
 
-    public function createRequestRMA() {
+    public function createRequestRMA()
+    {
         $searchResult   = new \SM\Core\Api\SearchResult();
         $items = [];
         if ($this->integrateHelperData->isIntegrateRMAExtension() && $this->integrateHelperData->isExistAheadWorksRMA()) {
@@ -223,7 +223,8 @@ class AheadWorks extends ServiceAbstract
             ->setItems($items);
     }
 
-    public function preparedCustomFields($customFields) {
+    public function preparedCustomFields($customFields)
+    {
         $customFieldValues = [];
         foreach ($customFields as $key => $value) {
             $customFieldEntity = $this->objectManager->get('Aheadworks\Rma\Api\Data\RequestCustomFieldValueInterfaceFactory')->create();
@@ -231,10 +232,16 @@ class AheadWorks extends ServiceAbstract
             $customFieldEntity->setValue($value);
             $customFieldValues[] = $customFieldEntity;
         }
+
+        if (!isset($customFieldValues[2]['field_id'])) {
+            $customFieldValues[2]['field_id']= 4;
+            $customFieldValues[2]['value']= '';
+        }
         return $customFieldValues;
     }
 
-    public function preparedOrderItems($orderItems) {
+    public function preparedOrderItems($orderItems)
+    {
         $orderItemValues = [];
         foreach ($orderItems as $orderItem) {
             if ($orderItem['return_qty'] > 0) {
@@ -247,5 +254,4 @@ class AheadWorks extends ServiceAbstract
         }
         return $orderItemValues;
     }
-
 }
