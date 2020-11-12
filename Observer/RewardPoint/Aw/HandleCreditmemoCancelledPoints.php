@@ -169,7 +169,7 @@ class HandleCreditmemoCancelledPoints implements ObserverInterface
                 continue;
             }
 
-            if ($creditmemo->getGrandTotal() == 0) {
+            if ($creditmemo->getGrandTotal() === 0) {
                 $ratio = 0;
             } else {
                 $ratio = (float)($item->getRowTotalInclTax() / $creditmemo->getGrandTotal());
