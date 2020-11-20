@@ -38,20 +38,26 @@ class RPIntegrateManagement extends ServiceAbstract
             'aheadWorks' => [
                 [
                     "version" => "~1.0.0",
-                    "class"   => "SM\\Integrate\\RewardPoint\\AheadWorks100"
-                ]
+                    "class"   => "SM\\Integrate\\RewardPoint\\AheadWorks100",
+                ],
             ],
-            'mage2_ee' => [
+            'amasty'     => [
                 [
                     "version" => "~1.0.0",
-                    "class"   => "SM\\Integrate\\RewardPoint\\Magento2EE"
-                ]
+                    "class"   => "SM\\Integrate\\RewardPoint\\Amasty100",
+                ],
             ],
-            'mage_store'  => [
+            'mage2_ee'   => [
+                [
+                    "version" => "~1.0.0",
+                    "class"   => "SM\\Integrate\\RewardPoint\\Magento2EE",
+                ],
+            ],
+            'mage_store' => [
                 [
                     'version' => "~1.0.0",
-                    "class"   => "SM\\Integrate\\RewardPoint\\MageStore100"
-                ]
+                    "class"   => "SM\\Integrate\\RewardPoint\\MageStore100",
+                ],
             ],
         ];
     /**
@@ -80,7 +86,7 @@ class RPIntegrateManagement extends ServiceAbstract
         Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->configLoader  = $loader;
+        $this->configLoader = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -90,7 +96,7 @@ class RPIntegrateManagement extends ServiceAbstract
     public function getCurrentIntegrateModel()
     {
         $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
-        $configIntegrateRpValue      = isset($config['xretail/pos/integrate_rp']) ?
+        $configIntegrateRpValue = isset($config['xretail/pos/integrate_rp']) ?
             $config['xretail/pos/integrate_rp']['value'] : 'none';
 
         if (is_null($this->currentIntegrateModel) && $configIntegrateRpValue != 'none') {

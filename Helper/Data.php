@@ -88,6 +88,8 @@ class Data
             if (!!$configValue && $configValue !== 'none') {
                 if ($configValue === 'aheadWorks' && $this->isAHWRewardPoints()) {
                     $this->isIntegrateRp = true;
+                } elseif ($configValue === 'amasty' && $this->isAmastyRewardPoints()) {
+                    $this->isIntegrateRp = true;
                 } elseif ($configValue === 'mage2_ee' && $this->isRewardPointMagento2EE()) {
                     $this->isIntegrateRp = true;
                 } else {
@@ -287,6 +289,21 @@ class Data
     public function isAHWRewardPointsExist()
     {
         return !!$this->moduleList->getOne("Aheadworks_RewardPoints");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAmastyRewardPoints()
+    {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
+        return !!$this->moduleList->getOne("Amasty_Rewards") && $configValue === 'amasty';
+    }
+
+    public function isAmastyRewardPointsExist()
+    {
+        return !!$this->moduleList->getOne("Amasty_Rewards");
     }
 
     /**
