@@ -19,8 +19,6 @@ use Magento\Directory\Model\Currency;
 
 class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
 {
-
-
     /**
      * @var \SM\Shift\Model\RetailTransactionFactory
      */
@@ -42,17 +40,18 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
      */
     private $storeManager;
     /**
-     * @var Magento\Directory\Model\Currency
+     * @var \Magento\Directory\Model\Currency
      */
     private $currencyModel;
 
     /**
      * HandleAfterCheckoutToSaveTransaction constructor.
-     * @param RetailTransactionFactory $transactionFactory
-     * @param Data $shiftHelperData
-     * @param PaymentHelper $paymentHelper
-     * @param StoreManagerInterface $storeManager
-     * @param Currency $currencyModel
+     *
+     * @param RetailTransactionFactory  $transactionFactory
+     * @param Data                      $shiftHelperData
+     * @param PaymentHelper             $paymentHelper
+     * @param StoreManagerInterface     $storeManager
+     * @param Currency                  $currencyModel
      * @param \SM\Integrate\Helper\Data $integrateHelper
      */
     public function __construct(
@@ -63,12 +62,12 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
         Currency $currencyModel,
         \SM\Integrate\Helper\Data $integrateHelper
     ) {
-        $this->shiftHelperData          = $shiftHelperData;
+        $this->shiftHelperData = $shiftHelperData;
         $this->retailTransactionFactory = $transactionFactory;
-        $this->paymentHelper            = $paymentHelper;
-        $this->integrateHelper          = $integrateHelper;
-        $this->storeManager             = $storeManager;
-        $this->currencyModel            = $currencyModel;
+        $this->paymentHelper = $paymentHelper;
+        $this->integrateHelper = $integrateHelper;
+        $this->storeManager = $storeManager;
+        $this->currencyModel = $currencyModel;
     }
 
     /**
@@ -81,55 +80,70 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
     {
         /** @var Order $order */
         $order = $observer->getData('order');
-        $baseCurrencyCode    = $this->storeManager->getStore()->getBaseCurrencyCode();
-        $currentCurrencyCode = $this->storeManager->getStore($order->getData('store_id'))->getCurrentCurrencyCode();
-        $allowedCurrencies   = $this->currencyModel->getConfigAllowCurrencies();
-        $rates               = $this->currencyModel->getCurrencyRates($baseCurrencyCode, array_values($allowedCurrencies));
-        if ($this->integrateHelper->isIntegrateRP() && $this->integrateHelper->isRewardPointMagento2EE()) {
-            if ($order->getData('retail_id') && $order->getData('reward_currency_amount')) {
-                $outletId          = $order->getData('outlet_id');
-                $registerId        = $order->getData('register_id');
-                $currentShift      = $this->shiftHelperData->getShiftOpening($outletId, $registerId);
-                $giftCardPaymentId = $this->paymentHelper->getPaymentIdByType(RetailPayment::REWARD_POINT_PAYMENT_TYPE);
-                if ($currentShift->getData('id') && $giftCardPaymentId) {
-                    $transaction = $this->getRetailTransactionModel();
-                    $transaction->setData('payment_id', $giftCardPaymentId)
-                                ->setData('shift_id', $currentShift->getData('id'))
-                                ->setData('outlet_id', $outletId)
-                                ->setData('register_id', $registerId)
-                                ->setData('payment_title', 'Reward Points')
-                                ->setData('payment_type', RetailPayment::REWARD_POINT_PAYMENT_TYPE)
-                                ->setData('amount', $order->getData('reward_currency_amount'))
-                                ->setData('is_purchase', 1)
-                                ->setData('user_name', $order->getData('user_name'))
-                                ->setData('order_id', $order->getEntityId())
-                                ->setData('base_amount', isset($rates[$currentCurrencyCode]) && $rates[$currentCurrencyCode] != 0 ? $order->getData('reward_currency_amount') / $rates[$currentCurrencyCode] : null)
-                                ->save();
-                }
-            }
-        } elseif ($this->integrateHelper->isIntegrateRP() && $this->integrateHelper->isAHWRewardPoints()) {
-            if ($order->getData('retail_id') && $order->getData('aw_reward_points')) {
-                $outletId          = $order->getData('outlet_id');
-                $registerId        = $order->getData('register_id');
-                $currentShift      = $this->shiftHelperData->getShiftOpening($outletId, $registerId);
-                $giftCardPaymentId = $this->paymentHelper->getPaymentIdByType(RetailPayment::REWARD_POINT_PAYMENT_TYPE);
-                if ($currentShift->getData('id') && $giftCardPaymentId) {
-                    $transaction = $this->getRetailTransactionModel();
-                    $transaction->setData('payment_id', $giftCardPaymentId)
-                                ->setData('shift_id', $currentShift->getData('id'))
-                                ->setData('outlet_id', $outletId)
-                                ->setData('register_id', $registerId)
-                                ->setData('payment_title', 'Reward Points')
-                                ->setData('payment_type', RetailPayment::REWARD_POINT_PAYMENT_TYPE)
-                                ->setData('amount', $order->getData('aw_reward_points_amount'))
-                                ->setData('is_purchase', 1)
-                                ->setData('user_name', $order->getData('user_name'))
-                                ->setData('order_id', $order->getEntityId())
-                                ->setData('base_amount', isset($rates[$currentCurrencyCode]) && $rates[$currentCurrencyCode] != 0 ? $order->getData('aw_reward_points_amount') / $rates[$currentCurrencyCode] : null)
-                                ->save();
-                }
-            }
+        $quote = $observer->getData('quote');
+
+        if (!$this->integrateHelper->isIntegrateRP() || !$order->getData('retail_id')) {
+            return;
         }
+
+        $baseCurrencyCode = $this->storeManager->getStore()->getBaseCurrencyCode();
+        $currentCurrencyCode = $this->storeManager->getStore($order->getData('store_id'))->getCurrentCurrencyCode();
+        $allowedCurrencies = $this->currencyModel->getConfigAllowCurrencies();
+        $rates = $this->currencyModel->getCurrencyRates($baseCurrencyCode, array_values($allowedCurrencies));
+
+        $magentoEECondition = $this->integrateHelper->isRewardPointMagento2EE() && $order->getData('reward_currency_amount');
+        $aheadWorksCondition = $this->integrateHelper->isAHWRewardPoints() && $order->getData('aw_reward_points');
+        $amastyCondition = $this->integrateHelper->isAmastyRewardPoints() && floatval($quote->getAmrewardsPoint()) > 0;
+
+        $spentAmount = 0;
+
+        if ($magentoEECondition) {
+            $spentAmount = floatval($order->getData('reward_currency_amount'));
+        } elseif ($aheadWorksCondition) {
+            $spentAmount = floatval($order->getData('aw_reward_points_amount'));
+        } elseif ($amastyCondition) {
+            $spentAmount = floatval($quote->getAmrewardsPoint());
+        }
+
+        $currencyRate = isset($rates[$currentCurrencyCode]) ? $rates[$currentCurrencyCode] : 1;
+        $this->saveRewardPointsTransaction($order, $spentAmount, $currencyRate);
+    }
+
+    /**
+     * @param $order
+     * @param $spentAmount
+     * @param $currencyRate
+     *
+     * @return \SM\Shift\Model\RetailTransaction|null
+     * @throws \Exception
+     */
+    protected function saveRewardPointsTransaction($order, $spentAmount, $currencyRate)
+    {
+        $outletId = $order->getData('outlet_id');
+        $registerId = $order->getData('register_id');
+        $currentShift = $this->shiftHelperData->getShiftOpening($outletId, $registerId);
+        $rewardPaymentId = $this->paymentHelper->getPaymentIdByType(RetailPayment::REWARD_POINT_PAYMENT_TYPE);
+        $baseSpentAmount = $spentAmount / $currencyRate;
+
+        if ($currentShift->getData('id') && $rewardPaymentId) {
+            $transaction = $this->getRetailTransactionModel();
+            $transaction->setPaymentId($rewardPaymentId)
+                ->setShiftId($currentShift->getData('id'))
+                ->setOutletId($outletId)
+                ->setRegisterId($registerId)
+                ->setPaymentTitle('Reward Points')
+                ->setPaymentType(RetailPayment::REWARD_POINT_PAYMENT_TYPE)
+                ->setIsPurchase(1)
+                ->setUsername($order->getData('user_name'))
+                ->setOrderId($order->getEntityId())
+                ->setAmount($spentAmount)
+                ->setBaseAmount($baseSpentAmount)
+                ->save();
+
+            return $transaction;
+        }
+
+        return null;
     }
 
     /**
