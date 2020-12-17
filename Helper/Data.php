@@ -231,7 +231,7 @@ class Data
      */
     public function isIntegrateWH()
     {
-        return !!$this->moduleList->getOne("BoostMyShop_AdvancedStock");
+        return !!$this->moduleList->getOne("BoostMyShop_AdvancedStock") || !!$this->moduleList->getOne("Magento_Inventory");
     }
 
     /**
