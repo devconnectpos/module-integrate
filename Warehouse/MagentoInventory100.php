@@ -12,8 +12,8 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\InventorySales\Model\GetProductSalableQty;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Model\DataObject;
 use SM\Integrate\Data\XWarehouse;
@@ -73,6 +73,8 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
     private $sourceItemRepository;
 
+    private $getProductSalableQty;
+
     /**
      * BootMyShop0015 constructor.
      *
@@ -83,6 +85,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
      * @param \Magento\Store\Model\StoreManagerInterface              $storeManager
      * @param \Magento\Framework\Api\SearchCriteriaBuilderFactory     $searchCriteriaBuilderFactory
+     * @param GetProductSalableQty                                    $getProductSalableQty
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -91,13 +94,15 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         ResourceConnection $resource,
         ProductStock $productStock,
         StoreManagerInterface $storeManager,
-        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
+        GetProductSalableQty $getProductSalableQty
     ) {
         $this->productStock = $productStock;
-        $this->resource     = $resource;
-        $this->connection   = $resource->getConnection();
+        $this->resource = $resource;
+        $this->connection = $resource->getConnection();
         $this->storeManager = $storeManager;
         $this->searchCriteriaBuilderFactory = $searchCriteriaBuilderFactory;
+        $this->getProductSalableQty = $getProductSalableQty;
         parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
@@ -111,19 +116,20 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     public function filterProductCollectionByWarehouse($collection, $warehouseId)
     {
         $collection->getSelect()
-                   ->joinLeft(
-                       ['warehouse_item' => $this->resource->getTableName("inventory_source_item")],
-                       "warehouse_item.source_code = '{$warehouseId}' AND warehouse_item.sku = e.sku",
-                       [
-                           "physical_quantity"  => "quantity",
-                           "available_quantity" => "quantity",
-                           "is_in_stock"        => "status"
-                       ]
-                   )
-                   ->where(
-                       "warehouse_item.source_code = '{$warehouseId}' 
+            ->joinLeft(
+                ['warehouse_item' => $this->resource->getTableName("inventory_source_item")],
+                "warehouse_item.source_code = '{$warehouseId}' AND warehouse_item.sku = e.sku",
+                [
+                    "physical_quantity"  => "quantity",
+                    "available_quantity" => "quantity",
+                    "is_in_stock"        => "status",
+                ]
+            )
+            ->where(
+                "warehouse_item.source_code = '{$warehouseId}'
                        OR (e.type_id <> 'simple' AND e.type_id <> 'virtual')"
-                   );
+            );
+
         return $collection;
     }
 
@@ -145,22 +151,20 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     public function loadWarehouseData($searchCriteria)
     {
         // TODO: Implement loadWarehouseData() method.
-        $searchResult   = new \SM\Core\Api\SearchResult();
-        $items          = [];
-        $size           = 0;
+        $searchResult = new \SM\Core\Api\SearchResult();
+        $items = [];
+        $size = 0;
         $lastPageNumber = 0;
         if ($this->integrateData->isMagentoInventory()) {
             $warehouseCollection = $this->getWarehouseCollection($searchCriteria);
-            $size                = $warehouseCollection->getSize();
-            $lastPageNumber      = $warehouseCollection->getLastPageNumber();
+            $size = $warehouseCollection->getSize();
+            $lastPageNumber = $warehouseCollection->getLastPageNumber();
 
             if ($warehouseCollection->getLastPageNumber() < $searchCriteria->getData('currentPage')) {
-
-            }
-            else {
+            } else {
                 foreach ($warehouseCollection as $item) {
                     $_data = new XWarehouse();
-                    $store            = $this->storeManager->getStore($searchCriteria->getData('storeId'));
+                    $store = $this->storeManager->getStore($searchCriteria->getData('storeId'));
                     $stockSourceLink = $this->getStockSourceLinkCollection()->addFieldToFilter('source_code', $item->getData('source_code'));
                     $listStock = [];
                     foreach ($stockSourceLink->getItems() as $s) {
@@ -250,23 +254,27 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     /**
      * @param $product
      * @param $warehouseId
-     * @param $item
      *
      * @return array|mixed
      */
     public function getStockItem($product, $warehouseId)
     {
-        $defaultStock                = $this->productStock->getStock($product, 0);
-        $defaultStock['qty']         = $product->getData('available_quantity');
+        $defaultStock = $this->productStock->getStock($product, 0);
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-            if (($product->getData('available_quantity') > 0 && $product->getData('is_in_stock') == 1)
-	            || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+            if (($defaultStock['qty'] > 0) || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;
             }
         }
+
+        try {
+            // Add saleable quantity to item
+            $defaultStock['saleable_qty'] = (string)$this->getProductSalableQty->execute($product->getSku(), $defaultStock['stock_id']);
+        } catch (\Exception $e) {
+        }
+
         return $defaultStock;
     }
 
@@ -308,17 +316,25 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         $whItem = $this->getWarehouseItemCollection(
             new DataObject(
                 [
-                    "entity_sku"    => $product->getSku(),
-                    "warehouse_id" => $warehouseId
-                ]))->getFirstItem();
+                    "entity_sku"   => $product->getSku(),
+                    "warehouse_id" => $warehouseId,
+                ]
+            )
+        )->getFirstItem();
         if ($whItem->getData('source_item_id')) {
+            $saleableQty = $whItem->getData("quantity");
+            try {
+                // Add saleable quantity to item
+                $saleableQty = $this->getProductSalableQty->execute($product->getSku(), $defaultStock['stock_id']);
+            } catch (\Exception $e) {
+            }
+
             return [
                 'physical_quantity'  => $whItem->getData("quantity"),
-                'available_quantity' => $whItem->getData("quantity"),
+                'available_quantity' => (string)$saleableQty,
                 'is_qty_decimal'     => $defaultStock["is_qty_decimal"],
             ];
-        }
-        else {
+        } else {
             return [];
         }
     }
@@ -329,6 +345,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     public function getStockId()
     {
         $websiteCode = $this->storeManager->getWebsite()->getCode();
+
         return $this->objectManager->get(\Magento\InventorySalesApi\Api\StockResolverInterface::class)->execute(SalesChannelInterface::TYPE_WEBSITE, $websiteCode)->getStockId();
     }
 
@@ -342,7 +359,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         $stockId = $this->getStockId();
         $stockItemToCheck = $product['stock_item_to_check'];
         $isSalable = true;
-        foreach ($stockItemToCheck as $key  => $value) {
+        foreach ($stockItemToCheck as $key => $value) {
             $childProduct = $this->productRepository->getById($value);
             $isSalableItem = $this->objectManager->create(
                 \Magento\InventorySalesApi\Api\IsProductSalableForRequestedQtyInterface::class
@@ -355,6 +372,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
                 $isSalable = false;
             }
         }
+
         return $isSalable;
     }
 
@@ -367,14 +385,14 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     {
         $listStock = [];
         foreach ($stockSourceLink->getItems() as $s) {
-            $stock     = $this->getStockCollection()->get($s['stock_id']);
+            $stock = $this->getStockCollection()->get($s['stock_id']);
             $extension = $stock->getData('extension_attributes');
             foreach ($extension->getSalesChannels() as $sales_channel) {
                 $websites = $this->getWebsiteCollection()->addFieldToFilter(
                     'code',
                     $sales_channel->getData('code')
                 );
-                $channel  = $sales_channel->getData();
+                $channel = $sales_channel->getData();
                 foreach ($websites->getItems() as $w) {
                     $channel['website_id'] = $w->getId();
                 }
@@ -394,11 +412,11 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      */
     public function returnItemToStock($item, $transaction)
     {
-        $sku            = $item->getProductSku();
-        $sourceCode     = $transaction->getWarehouseId();
-        $source         = $this->getWarehouseCollection(new DataObject(['entity_id' => $sourceCode]))
-                               ->getFirstItem();
-        $sourceItems    = [];
+        $sku = $item->getProductSku();
+        $sourceCode = $transaction->getWarehouseId();
+        $source = $this->getWarehouseCollection(new DataObject(['entity_id' => $sourceCode]))
+            ->getFirstItem();
+        $sourceItems = [];
         $sourceItemsMap = $this->getCurrentSourceItemsMap($sku);
         foreach ($sourceItemsMap as $sourceItem) {
             $sourceItemData = [
@@ -410,7 +428,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
                 'notify_stock_qty'             => '1',
                 'notify_stock_qty_use_default' => '1',
                 'initialize'                   => 'true',
-                'record_id'                    => $sourceItem->getSourceCode()
+                'record_id'                    => $sourceItem->getSourceCode(),
             ];
             if ($sourceItem->getSourceCode() === $sourceCode) {
                 $sourceItemData['quantity'] = (float)$sourceItem->getQuantity() + (float)$item->getProductQty();
@@ -455,8 +473,8 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     {
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
         $searchCriteriaBuilder = $this->searchCriteriaBuilderFactory->create();
-        $searchCriteria        = $searchCriteriaBuilder->addFilter(ProductInterface::SKU, $sku)->create();
-        $sourceItems           = $this->getSourceItemRepository()->getList($searchCriteria)->getItems();
+        $searchCriteria = $searchCriteriaBuilder->addFilter(ProductInterface::SKU, $sku)->create();
+        $sourceItems = $this->getSourceItemRepository()->getList($searchCriteria)->getItems();
 
         $sourceItemMap = [];
         if ($sourceItems) {
