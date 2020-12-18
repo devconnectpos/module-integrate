@@ -76,10 +76,6 @@ class Earning
 
         /** @var \Amasty\Rewards\Model\Rule $rule */
         foreach ($rules as $rule) {
-            if ($rule->validate($address)) {
-                continue;
-            }
-
             $amount += $rule->getAmount();
         }
 

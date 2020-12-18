@@ -35,6 +35,9 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     public function saveRPDataBeforeQuoteCollect($data)
     {
+        $pointsLeft = $this->getRewardRepository()->getCustomerRewardBalance($this->getQuote()->getCustomerId());
+        $customerBalanceAmount = floatval($pointsLeft / $this->getHelper()->getPointsRate());
+
         if (isset($data['use_reward_point']) && $data['use_reward_point'] == true) {
             $usedPoints = $data['reward_point_spent'] ?? 0;
 
@@ -43,7 +46,6 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
             }
 
             $minPoints = $this->getConfig()->getMinPointsRequirement($this->getQuote()->getStoreId());
-            $pointsLeft = $this->getRewardRepository()->getCustomerRewardBalance($this->getQuote()->getCustomerId());
 
             if ($minPoints && $pointsLeft < $minPoints) {
                 throw new LocalizedException(
@@ -58,7 +60,6 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
             $pointsData = $this->limitValidate($this->getQuote(), $usedPoints);
             $usedPoints = abs($pointsData['allowed_points']);
             $rpDiscountAmount = floatval($usedPoints / $this->getHelper()->getPointsRate());
-            $customerBalanceAmount = floatval($pointsLeft / $this->getHelper()->getPointsRate());
 
             $this->collectCurrentTotals($this->getQuote(), $usedPoints);
             $this->getQuote()->setData('reward_point_spent', $usedPoints);
@@ -74,6 +75,10 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
                     'reward_points' => $usedPoints,
                 ]
             );
+        } else {
+            $this->getQuote()->setData('use_reward_point', false);
+            $this->getQuote()->setData('customer_balance_currency', $customerBalanceAmount);
+            $this->getQuote()->setData('customer_balance_base_currency', $customerBalanceAmount);
         }
     }
 
