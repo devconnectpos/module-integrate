@@ -76,7 +76,9 @@ class Earning
 
         /** @var \Amasty\Rewards\Model\Rule $rule */
         foreach ($rules as $rule) {
-            $amount += $rule->getAmount();
+            if ($rule->validate($address)) {
+                $amount += $rule->getAmount();
+            }
         }
 
         return floatval(round($amount, 2));
