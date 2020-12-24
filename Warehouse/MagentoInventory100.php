@@ -13,7 +13,6 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\InventorySales\Model\GetProductSalableQty;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Model\DataObject;
 use SM\Integrate\Data\XWarehouse;
@@ -73,8 +72,6 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
     private $sourceItemRepository;
 
-    private $getProductSalableQty;
-
     /**
      * BootMyShop0015 constructor.
      *
@@ -85,7 +82,6 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      * @param \SM\Product\Repositories\ProductManagement\ProductStock $productStock
      * @param \Magento\Store\Model\StoreManagerInterface              $storeManager
      * @param \Magento\Framework\Api\SearchCriteriaBuilderFactory     $searchCriteriaBuilderFactory
-     * @param GetProductSalableQty                                    $getProductSalableQty
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -94,15 +90,13 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         ResourceConnection $resource,
         ProductStock $productStock,
         StoreManagerInterface $storeManager,
-        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
-        GetProductSalableQty $getProductSalableQty
+        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
     ) {
         $this->productStock = $productStock;
         $this->resource = $resource;
         $this->connection = $resource->getConnection();
         $this->storeManager = $storeManager;
         $this->searchCriteriaBuilderFactory = $searchCriteriaBuilderFactory;
-        $this->getProductSalableQty = $getProductSalableQty;
         parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
@@ -271,7 +265,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
         try {
             // Add saleable quantity to item
-            $defaultStock['saleable_qty'] = (string)$this->getProductSalableQty->execute($product->getSku(), $defaultStock['stock_id']);
+            $defaultStock['saleable_qty'] = (string)$this->getProductSalableQtyModel()->execute($product->getSku(), $defaultStock['stock_id']);
         } catch (\Exception $e) {
         }
 
@@ -325,7 +319,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
             $saleableQty = $whItem->getData("quantity");
             try {
                 // Add saleable quantity to item
-                $saleableQty = $this->getProductSalableQty->execute($product->getSku(), $defaultStock['stock_id']);
+                $saleableQty = $this->getProductSalableQtyModel()->execute($product->getSku(), $defaultStock['stock_id']);
             } catch (\Exception $e) {
             }
 
@@ -436,17 +430,29 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
             $sourceItems[] = $sourceItemData;
         }
-        $this->getSourceItemProcessor()->process($sku, $sourceItems);
+
+        // Fix compatibility with Magento 2.4
+        $processor = $this->getSourceItemProcessor();
+        if (method_exists($processor, 'process')) {
+            $this->getSourceItemProcessor()->process($sku, $sourceItems);
+        } elseif(method_exists($processor, 'execute')) {
+            $this->getSourceItemProcessor()->execute($sku, $sourceItems);
+        }
         $this->triggerRealTimeProduct($item->getProductId());
     }
 
     /**
-     * @return mixed
+     * @return mixed|\Magento\InventoryCatalog\Model\SourceItemsProcessor|\Magento\InventoryCatalogAdminUi\Observer\SourceItemsProcessor
      */
     protected function getSourceItemProcessor()
     {
         if ($this->sourceItemProcessor === null) {
-            $this->sourceItemProcessor = $this->objectManager->create('Magento\InventoryCatalogAdminUi\Observer\SourceItemsProcessor');
+            // Check class existence to fix compatibility with Magento 2.4
+            if (class_exists('Magento\InventoryCatalog\Model\SourceItemsProcessor')) {
+                $this->sourceItemProcessor = $this->objectManager->create('Magento\InventoryCatalog\Model\SourceItemsProcessor');
+            } elseif (class_exists('Magento\InventoryCatalogAdminUi\Observer\SourceItemsProcessor')) {
+                $this->sourceItemProcessor = $this->objectManager->create('Magento\InventoryCatalogAdminUi\Observer\SourceItemsProcessor');
+            }
         }
 
         return $this->sourceItemProcessor;
@@ -484,5 +490,13 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         }
 
         return $sourceItemMap;
+    }
+
+    /**
+     * @return mixed|\Magento\InventorySales\Model\GetProductSalableQty
+     */
+    public function getProductSalableQtyModel()
+    {
+        return $this->objectManager->create('Magento\InventorySales\Model\GetProductSalableQty');
     }
 }
