@@ -42,12 +42,13 @@ interface WarehouseIntegrateInterface
     public function getWarehouseItemCollection($searchCriteria);
 
     /**
-     * @param $product
-     * @param $warehouseId
+     * @param      $product
+     * @param      $warehouseId
+     * @param null $scopeId
      *
      * @return mixed
      */
-    public function getStockItem($product, $warehouseId);
+    public function getStockItem($product, $warehouseId, $scopeId = null);
 
     /**
      * @param $searchCriteria

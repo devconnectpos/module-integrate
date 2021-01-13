@@ -213,7 +213,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         return $collection;
     }
 
-    public function getStockItem($product, $warehouseId)
+    public function getStockItem($product, $warehouseId, $scopeId = null)
     {
         $defaultStock = $this->productStock->getStock($product, 0);
 
