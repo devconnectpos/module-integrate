@@ -215,6 +215,8 @@ class Data
                     $this->isIntegrateMultipleWareHouse = true;
                 } elseif ($configValue === 'magento_inventory' && $this->isMagentoInventory()) {
                     $this->isIntegrateMultipleWareHouse = true;
+                } elseif ($configValue === 'mage_store' && $this->isMagestoreInventory()) {
+                    $this->isIntegrateMultipleWareHouse = true;
                 } else {
                     $this->isIntegrateMultipleWareHouse = false;
                 }
@@ -240,6 +242,14 @@ class Data
     public function isMagentoInventory()
     {
         return !!$this->moduleList->getOne("Magento_Inventory");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMagestoreInventory()
+    {
+        return !!$this->moduleList->getOne("Magestore_InventorySuccess");
     }
 
     /**

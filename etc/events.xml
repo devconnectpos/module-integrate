@@ -28,4 +28,8 @@
     <event name="model_save_after">
         <observer name="handle_mass_update_stock" instance="SM\Integrate\Warehouse\Observer\HandleMassUpdateStock"/>
     </event>
+
+    <event name="inventorysuccess_new_order_warehouse">
+        <observer name="connectpos-integrate-magestore-inventory-get-order-warehouse" instance="SM\Integrate\Observer\Warehouse\MageStoreInventorySuccess\OrderWarehouse"/>
+    </event>
 </config>
