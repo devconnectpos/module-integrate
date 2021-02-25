@@ -488,7 +488,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      *
      * @return array
      */
-    protected function getCurrentSourceItemsMap($sku, $warehouseId)
+    protected function getCurrentSourceItemsMap($sku, $warehouseId = null)
     {
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
         $searchCriteriaBuilder = $this->searchCriteriaBuilderFactory->create();

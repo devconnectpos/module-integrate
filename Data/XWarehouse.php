@@ -97,4 +97,9 @@ class XWarehouse extends ApiDataAbstract
     {
         return $this->getData('fax');
     }
+
+    public function getStoreId()
+    {
+        return $this->getData('store_id');
+    }
 }

@@ -140,6 +140,8 @@ class WarehouseIntegrateManagement extends ServiceAbstract
 
             if ($this->integrateData->isMagentoInventory()) {
                 $class = self::$LIST_WH_INTEGRATE['magento_inventory'][0]['class'];
+            } elseif ($this->integrateData->isMagestoreInventory()) {
+                $class = self::$LIST_WH_INTEGRATE['mage_store'][0]['class'];
             } else {
                 $class = self::$LIST_WH_INTEGRATE['bms'][0]['class'];
             }
@@ -190,9 +192,10 @@ class WarehouseIntegrateManagement extends ServiceAbstract
                 )
             )->getFirstItem();
 
-            if (!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) {
+            if (!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory() && !$this->integrateData->isMagestoreInventory()) {
                 continue;
             }
+
             if ($this->integrateData->isIntegrateWH() && $warehouse->getData("w_id")) {
                 $_data = [
                     "warehouse_name" => $warehouse->getData("w_name"),
@@ -208,6 +211,23 @@ class WarehouseIntegrateManagement extends ServiceAbstract
                 array_push($items, $_data);
                 continue;
             }
+
+            if ($this->integrateData->isMagestoreInventory() && $warehouse->getData("warehouse_id")) {
+                $_data = [
+                    "warehouse_name" => $warehouse->getData("warehouse_name"),
+                    "warehouse_id" => $warehouse->getData("warehouse_id"),
+                    "outlet_id" => $outlet->getId(),
+                    "outlet_name" => $outlet->getName(),
+                    "warehouse_stock" => $this->getCurrentIntegrateModel()->getWarehouseStockItem(
+                        $this->getSearchCriteria()->getData("entity_id"),
+                        $warehouse->getData("warehouse_id")
+                    )
+                ];
+
+                array_push($items, $_data);
+                continue;
+            }
+
             if ($this->integrateData->isMagentoInventory() && $warehouse->getData("source_code")) {
                 $_data = [
                     "warehouse_name" => $warehouse->getData("name"),
@@ -283,7 +303,7 @@ class WarehouseIntegrateManagement extends ServiceAbstract
         $xProduct->setData('store_id', $storeId);
 
         // get stock_items
-        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory()) || !$warehouseId) {
+        if ((!$this->integrateData->isIntegrateWH() && !$this->integrateData->isMagentoInventory() && !$this->integrateData->isMagestoreInventory()) || !$warehouseId) {
             $xProduct->setData(
                 'stock_items',
                 $this->getProductStock()->getStock($product, 0)
@@ -306,6 +326,7 @@ class WarehouseIntegrateManagement extends ServiceAbstract
             $product->getEntityId(),
             $warehouseId
         );
+
         if ($warehouseStock) {
             $defaultStock['qty'] = $warehouseStock['available_quantity'];
         } else {

@@ -27,4 +27,6 @@
     </type>
 
     <preference for="Magento\Reward\Model\Reward" type="SM\Integrate\RewardPoint\Magento2EE\Reward" />
+
+    <preference for="Magento\Catalog\Model\ResourceModel\Product\Collection" type="SM\Integrate\Warehouse\Rewrite\Product\Collection" />
 </config>
