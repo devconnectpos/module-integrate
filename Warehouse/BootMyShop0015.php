@@ -302,7 +302,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             return [
                 'physical_quantity'  => $whItem->getData("wi_physical_quantity"),
                 'available_quantity' => $whItem->getData("wi_available_quantity"),
-                'is_qty_decimal'     => $defaultStock["is_qty_decimal"],
+                'is_qty_decimal'     => isset($defaultStock["is_qty_decimal"]) ? $defaultStock["is_qty_decimal"] : null,
             ];
         } else {
             return [];

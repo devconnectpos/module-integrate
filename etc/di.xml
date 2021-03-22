@@ -28,5 +28,7 @@
 
     <preference for="Magento\Reward\Model\Reward" type="SM\Integrate\RewardPoint\Magento2EE\Reward" />
 
-    <preference for="Magento\Catalog\Model\ResourceModel\Product\Collection" type="SM\Integrate\Warehouse\Rewrite\Product\Collection" />
+    <type name="Magento\Eav\Model\Entity\Collection\AbstractCollection">
+        <plugin name="connectpos_ignore_duplicate_entry" type="SM\Integrate\Warehouse\Plugin\Collection\AbstractCollection" sortOrder="20"/>
+    </type>
 </config>
