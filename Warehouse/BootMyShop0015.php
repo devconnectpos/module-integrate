@@ -108,7 +108,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
                            "available_quantity" => "wi_available_quantity"
                        ]
                    );
-                   //->where("(e.type_id = 'simple'" . " AND " . "warehouse_item.wi_available_quantity > 0) OR e.type_id <> 'simple'");
+        //->where("(e.type_id = 'simple'" . " AND " . "warehouse_item.wi_available_quantity > 0) OR e.type_id <> 'simple'");
 
         return $collection;
     }
@@ -215,7 +215,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
 
     public function getStockItem($product, $warehouseId, $scopeId = null)
     {
-        $defaultStock = $this->productStock->getStock($product, 0);
+        $defaultStock = $this->productStock->getStock($product, $scopeId ? $scopeId : 0);
 
         $warehouseStockItem = $product->getData('available_quantity');
         if (null !== $warehouseStockItem) {
@@ -223,17 +223,20 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         }
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-        	if ($warehouseStockItem > 0
-		        || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
-		        $defaultStock['is_in_stock'] = 1;
-	        } else {
-		        $defaultStock['is_in_stock'] = 0;
-	        }
+            if ($warehouseStockItem > 0
+                || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+                $defaultStock['is_in_stock'] = 1;
+            } else {
+                $defaultStock['is_in_stock'] = 0;
+            }
+        }
+
+        if ($product->getData('type_id') == 'configurable') {
+            $defaultStock['is_in_stock'] = $this->checkInStockConfigurableChildren($product, $scopeId);
         }
 
         return $defaultStock;
     }
-
 
     /**
      * @param $searchCriteria
@@ -351,5 +354,20 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         }
 
         return $this->stockMovement;
+    }
+
+    protected function checkInStockConfigurableChildren($product, $scope)
+    {
+        $children = $product->getTypeInstance()->getChildrenIds($product->getId());
+        $children = $children[0];
+        foreach ($children as $child) {
+            /** @var \Magento\Catalog\Model\Product $p */
+            $p = $this->productRepository->getById($child);
+            $stock = $this->getStockItem($p, $scope);
+            if ($stock['is_in_stock'] == 1) {
+                return 1;
+            }
+        }
+        return 0;
     }
 }
