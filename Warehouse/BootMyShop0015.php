@@ -223,8 +223,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         }
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-            if ($warehouseStockItem > 0
-                || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+            if ($warehouseStockItem > 0) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;
@@ -232,7 +231,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         }
 
         if ($product->getData('type_id') == 'configurable') {
-            $defaultStock['is_in_stock'] = $this->checkInStockConfigurableChildren($product, $scopeId);
+            $defaultStock['is_in_stock'] = $this->checkInStockConfigurableChildren($product, $warehouseId, $scopeId);
         }
 
         return $defaultStock;
@@ -356,14 +355,14 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         return $this->stockMovement;
     }
 
-    protected function checkInStockConfigurableChildren($product, $scope)
+    protected function checkInStockConfigurableChildren($product, $warehouseId, $scope)
     {
         $children = $product->getTypeInstance()->getChildrenIds($product->getId());
         $children = $children[0];
         foreach ($children as $child) {
             /** @var \Magento\Catalog\Model\Product $p */
             $p = $this->productRepository->getById($child);
-            $stock = $this->getStockItem($p, $scope);
+            $stock = $this->getStockItem($p, $warehouseId, $scope);
             if ($stock['is_in_stock'] == 1) {
                 return 1;
             }
