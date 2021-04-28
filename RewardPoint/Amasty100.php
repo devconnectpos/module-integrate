@@ -2,6 +2,7 @@
 
 namespace SM\Integrate\RewardPoint;
 
+use Magento\Checkout\Model\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
@@ -21,11 +22,25 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     private $earning;
 
+    /**
+     * @var \Magento\Framework\Module\Manager
+     */
+    private $moduleManager;
+
+    /**
+     * @var Session
+     */
+    protected $checkoutSession;
+
     public function __construct(
         ObjectManagerInterface $objectManager,
+        \Magento\Framework\Module\Manager $moduleManager,
+        Session $checkoutSession,
         \SM\Integrate\RewardPoint\Amasty\Earning $earning
     ) {
         $this->earning = $earning;
+        $this->moduleManager = $moduleManager;
+        $this->checkoutSession = $checkoutSession;
         parent::__construct($objectManager);
     }
 
@@ -79,6 +94,12 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
             $this->getQuote()->setData('use_reward_point', false);
             $this->getQuote()->setData('customer_balance_currency', $customerBalanceAmount);
             $this->getQuote()->setData('customer_balance_base_currency', $customerBalanceAmount);
+        }
+
+        // XRT-6092: Fix issue with AddOn modules
+        if ($this->getQuote()->getId() && $this->moduleManager->isEnabled('SmartOSC_Rewards') && !$this->checkoutSession->getQuoteId()) {
+            $this->getQuote()->setIsActive(true); // Must make this quote active in order to get pass reward calculation
+            $this->checkoutSession->setQuoteId($this->getQuote()->getId());
         }
     }
 

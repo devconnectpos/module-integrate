@@ -69,7 +69,7 @@ class Data
     /**
      * @return mixed
      */
-    private function getConfigLoaderData()
+    public function getConfigLoaderData()
     {
         if ($this->configData === null) {
             $this->configData = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
