@@ -271,7 +271,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-            if (($defaultStock['qty'] > 0) || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+            if ((isset($defaultStock['qty']) && $defaultStock['qty'] > 0) || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;
