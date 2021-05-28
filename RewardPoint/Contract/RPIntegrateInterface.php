@@ -33,4 +33,13 @@ interface RPIntegrateInterface
      * @return int
      */
     public function getCurrentPointBalance($customerId, $scope = null);
+
+    /**
+     * @param $customer
+     * @param $websiteId
+     * @param $amountDelta
+     *
+     * @return mixed
+     */
+    public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta);
 }

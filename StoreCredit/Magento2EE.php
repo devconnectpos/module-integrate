@@ -136,4 +136,41 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
         );
         return $quoteRpData;
     }
+
+    /**
+     * @param \Magento\Customer\Api\Data\CustomerInterface|\Magento\Customer\Model\Customer $customer
+     * @param float                                                                         $amountDelta
+     * @param int                                                                           $websiteId
+     * @param int                                                                           $storeId
+     *
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function updateCustomerStoreCreditBalance($customer, $websiteId, $storeId, $amountDelta)
+    {
+        $customerBalanceModel = $this->objectManager->create('\Magento\CustomerBalance\Model\Balance');
+        $amountDelta = floatval($amountDelta);
+
+        if ($amountDelta) {
+            $balance = $customerBalanceModel->setCustomer($customer)
+                ->setWebsiteId($websiteId ?: $customer->getWebsiteId())
+                ->setAmountDelta($amountDelta)
+                ->setComment('Adjusted using ConnectPOS');
+            if ($storeId) {
+                $balance->setNotifyByEmail(false, $storeId);
+            } elseif ($this->storeManager->isSingleStoreMode()) {
+                $stores = $this->storeManager->getStores();
+                $singleStore = array_shift($stores);
+                $balance->setNotifyByEmail(true, $singleStore->getId());
+            }
+            try {
+                $balance->save();
+            } catch (\Exception $e) {
+                $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/connectpos.log');
+                $logger = new \Zend\Log\Logger();
+                $logger->addWriter($writer);
+                $logger->info('====> Update customer store credit balance failed');
+                $logger->info($e->getMessage() . "\n" . $e->getTraceAsString());
+            }
+        }
+    }
 }

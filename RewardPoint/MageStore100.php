@@ -46,4 +46,8 @@ class MageStore100 implements RPIntegrateInterface
     {
         // TODO: Implement getCurrentPointBalance() method.
     }
+
+    public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta)
+    {
+    }
 }
