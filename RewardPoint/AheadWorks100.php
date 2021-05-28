@@ -67,14 +67,13 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     public function saveRPDataBeforeQuoteCollect($data)
     {
-
         if (isset($data['use_reward_point']) && $data['use_reward_point'] == true) {
             /** @var  \Magento\Quote\Model\Quote $quote */
             $quote = $this->getQuote();
 
             if (!$quote->getCustomerId()
                 || !$this->getCustomerRewardPointService()
-                         ->getCustomerRewardPointsBalance($quote->getCustomerId())
+                    ->getCustomerRewardPointsBalance($quote->getCustomerId())
             ) {
                 throw new NoSuchEntityException(__('No reward points to be used'));
             }
@@ -120,25 +119,26 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
     {
         // TODO: Implement getRPDataAfterQuoteCollect() method.
         $customerRPDetail = $this->getAWCustomerRPManagement()
-                                 ->getCustomerRewardPointsDetails($this->getQuote()->getCustomerId());
+            ->getCustomerRewardPointsDetails($this->getQuote()->getCustomerId());
         $quoteRpData = new RewardPointQuoteData();
         $rpEarn = $this->earningCalculator->calculation($this->getQuote(), $this->getQuote()->getCustomerId());
         $rpEarnAmount = $this->earningCalculator->calculationAmount($this->getQuote(), $this->getQuote()->getCustomerId(), $this->getQuote()->getStore()->getWebsiteId());
         $quoteRpData->addData(
             [
-                'use_reward_point'                  => $this->getQuote()->getAwUseRewardPoints(),
-                'customer_balance'                  => $customerRPDetail->getCustomerRewardPointsBalance(),
-                'customer_balance_currency'         => $customerRPDetail->getCustomerRewardPointsBalanceCurrency(),
-                'customer_balance_base_currency'    => $customerRPDetail->getCustomerRewardPointsBalanceBaseCurrency(),
-                'reward_point_spent'                => $this->getQuote()->getData('aw_reward_points'),
-                'reward_point_discount_amount'      => $this->getQuote()->getData('aw_reward_points_amount'),
-                'base_reward_point_discount_amount' => $this->getQuote()->getData('base_aw_reward_points_amount'),
-                'reward_point_earn'                 => $rpEarn,
-                'reward_point_earn_amount'          => $rpEarnAmount,
+                'use_reward_point'                        => $this->getQuote()->getAwUseRewardPoints(),
+                'customer_balance'                        => $customerRPDetail->getCustomerRewardPointsBalance(),
+                'customer_balance_currency'               => $customerRPDetail->getCustomerRewardPointsBalanceCurrency(),
+                'customer_balance_base_currency'          => $customerRPDetail->getCustomerRewardPointsBalanceBaseCurrency(),
+                'reward_point_spent'                      => $this->getQuote()->getData('aw_reward_points'),
+                'reward_point_discount_amount'            => $this->getQuote()->getData('aw_reward_points_amount'),
+                'base_reward_point_discount_amount'       => $this->getQuote()->getData('base_aw_reward_points_amount'),
+                'reward_point_earn'                       => $rpEarn,
+                'reward_point_earn_amount'                => $rpEarnAmount,
                 'customer_reward_points_once_min_balance' => $customerRPDetail->getCustomerRewardPointsOnceMinBalance(),
-	            'can_use_reward_points'             => $customerRPDetail->getCustomerRewardPointsOnceMinBalance() <= $customerRPDetail->getCustomerRewardPointsBalance()
+                'can_use_reward_points'                   => $customerRPDetail->getCustomerRewardPointsOnceMinBalance() <= $customerRPDetail->getCustomerRewardPointsBalance(),
             ]
         );
+
         return $quoteRpData;
     }
 
@@ -167,11 +167,53 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
         return $this->getCustomerRewardPointService()->getCustomerRewardPointsBalance($customerId, $scope);
     }
 
+    /**
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param                                              $websiteId
+     * @param                                              $amountDelta
+     *
+     * @return mixed|void
+     */
+    public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta)
+    {
+        $amountDelta = floatval($amountDelta);
+
+        if (empty($websiteId) || empty($amountDelta)) {
+            return;
+        }
+
+        $transactionData = [
+            'balance'             => $amountDelta,
+            'website_id'          => $websiteId,
+            'comment_to_admin'    => 'Balance adjusted on ConnectPOS',
+            'customer_selections' => [
+                [
+                    'customer_id'    => $customer->getId(),
+                    'customer_name'  => $customer->getFirstname()." ".$customer->getLastname(),
+                    'customer_email' => $customer->getEmail(),
+                    'website_id'     => $websiteId,
+                ],
+            ],
+        ];
+
+        try {
+            $createCommand = $this->objectManager->create('\Aheadworks\RewardPoints\Model\Data\Command\Transaction\Create');
+            $createCommand->execute($transactionData);
+        } catch (\Exception $e) {
+            $writer = new \Zend\Log\Writer\Stream(BP.'/var/log/connectpos.log');
+            $logger = new \Zend\Log\Logger();
+            $logger->addWriter($writer);
+            $logger->info('====> Unable to adjust customer balance');
+            $logger->info($e->getMessage()."\n".$e->getTraceAsString());
+        }
+    }
+
     public function getTransactionFactory()
     {
         if (is_Null($this->transactionFactory)) {
             $this->transactionFactory = $this->objectManager->get('Aheadworks\RewardPoints\Model\Transaction');
         }
+
         return $this->transactionFactory;
     }
 

@@ -23,8 +23,8 @@ use SM\Product\Repositories\ProductManagement\ProductStock;
 
 class WarehouseIntegrateManagement extends ServiceAbstract
 {
-
     private static $WAREHOUSE_ID = null;
+    private static $OUTLET_ID = null;
 
     /**
      * @var array
@@ -128,6 +128,21 @@ class WarehouseIntegrateManagement extends ServiceAbstract
     public static function setWarehouseId($WAREHOUSE_ID)
     {
         self::$WAREHOUSE_ID = $WAREHOUSE_ID;
+    }
+
+    /**
+     * @return null
+     */
+    public static function getOutletId() {
+        return self::$OUTLET_ID;
+    }
+
+    /**
+     * @param $OUTLET_ID
+     */
+    public static function setOutletId($OUTLET_ID)
+    {
+        self::$OUTLET_ID = $OUTLET_ID;
     }
 
     /**

@@ -64,6 +64,11 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
     private $stockMovement;
 
     /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    private $storeConfig;
+
+    /**
      * BootMyShop0015 constructor.
      *
      * @param \Magento\Framework\ObjectManagerInterface               $objectManager
@@ -81,12 +86,14 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         ResourceConnection $resource,
         ProductStock $productStock,
         StoreManagerInterface $storeManager,
-        Session $backendAuthSession
+        Session $backendAuthSession,
+        \Magento\Framework\App\Config\ScopeConfigInterface $storeConfig
     ) {
         $this->productStock       = $productStock;
         $this->resource           = $resource;
         $this->storeManager       = $storeManager;
         $this->backendAuthSession = $backendAuthSession;
+        $this->storeConfig       = $storeConfig;
         parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
@@ -223,7 +230,14 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         }
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-            if ($warehouseStockItem > 0 || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+            $manageStock = $defaultStock['manage_stock'] ?? 1;
+
+            if (isset($defaultStock['use_config_manage_stock'])) {
+                $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
+                $defaultStock['manage_stock'] = intval($manageStock);
+            }
+
+            if ($warehouseStockItem > 0 || $manageStock == 0) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;

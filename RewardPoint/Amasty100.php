@@ -146,6 +146,10 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
         return $this->getRewardRepository()->getCustomerRewardBalance($customerId);
     }
 
+    public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta)
+    {
+    }
+
     /**
      * {@inheritdoc}
      */
