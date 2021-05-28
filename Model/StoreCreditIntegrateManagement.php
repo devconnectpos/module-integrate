@@ -36,8 +36,8 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
             'mage2_ee' => [
                 [
                     "version" => "~1.0.0",
-                    "class"   => "SM\\Integrate\\StoreCredit\\Magento2EE"
-                ]
+                    "class"   => "SM\\Integrate\\StoreCredit\\Magento2EE",
+                ],
             ],
         ];
     /**
@@ -66,7 +66,7 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
         Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->configLoader  = $loader;
+        $this->configLoader = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -76,12 +76,11 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
     public function getCurrentIntegrateModel()
     {
         $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
-        $configIntegrateStoreCreditValue      = isset($config['xretail/pos/integrate_store_credit']) ?
+        $configIntegrateStoreCreditValue = isset($config['xretail/pos/integrate_store_credit']) ?
             $config['xretail/pos/integrate_store_credit']['value'] : 'none';
         if (is_null($this->currentIntegrateModel)) {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_STORE_CREDIT_INTEGRATE[$configIntegrateStoreCreditValue][0]['class'];
-
             $this->currentIntegrateModel = $this->objectManager->create($class);
         }
 
@@ -106,7 +105,6 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
     {
         $this->getCurrentIntegrateModel()->saveStoreCreditDataBeforeQuoteCollect($data);
     }
-
 
     /**
      * @param $id
