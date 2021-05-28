@@ -68,6 +68,11 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
      */
     private $connection;
 
+    /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    private $storeConfig;
+
     private $sourceItemProcessor;
 
     private $sourceItemRepository;
@@ -90,13 +95,15 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         ResourceConnection $resource,
         ProductStock $productStock,
         StoreManagerInterface $storeManager,
-        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory
+        SearchCriteriaBuilderFactory $searchCriteriaBuilderFactory,
+        \Magento\Framework\App\Config\ScopeConfigInterface $storeConfig
     ) {
         $this->productStock = $productStock;
         $this->resource = $resource;
         $this->connection = $resource->getConnection();
         $this->storeManager = $storeManager;
         $this->searchCriteriaBuilderFactory = $searchCriteriaBuilderFactory;
+        $this->storeConfig = $storeConfig;
         parent::__construct($objectManager, $integrateData, $productRepository);
     }
 
@@ -271,8 +278,17 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
 
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
         if (in_array($product->getData('type_id'), $listType)) {
-            if ((isset($defaultStock['qty']) && $defaultStock['qty'] > 0)
-                || (isset($defaultStock['manage_stock']) && $defaultStock['manage_stock'] == 0)) {
+            $minQty = $defaultStock['min_qty'] ?? 0;
+            $manageStock = $defaultStock['manage_stock'] ?? 1;
+
+            if (isset($defaultStock['use_config_manage_stock']) && $defaultStock['use_config_manage_stock'] != 0) {
+                $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
+                $defaultStock['manage_stock'] = intval($manageStock);
+            }
+
+            if ((isset($defaultStock['qty']) && $defaultStock['qty'] > $minQty)
+                || (isset($defaultStock['backorders']) && $defaultStock['backorders'] > 0 && $defaultStock['is_in_stock'] == 1)
+                || $manageStock == 0) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;
