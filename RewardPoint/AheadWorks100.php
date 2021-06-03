@@ -8,6 +8,7 @@
 
 namespace SM\Integrate\RewardPoint;
 
+use Magento\Framework\App\Action\Context;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use SM\Integrate\Data\RewardPointQuoteData;
@@ -45,6 +46,11 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
     private $earningCalculator;
 
     /**
+     * @var \Magento\Framework\App\RequestInterface
+     */
+    protected $_request;
+
+    /**
      * AheadWorks100 constructor.
      *
      * @param \Magento\Framework\ObjectManagerInterface    $objectManager
@@ -52,9 +58,11 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
-        Earning $earning
+        Earning $earning,
+        Context $context
     ) {
         $this->earningCalculator = $earning;
+        $this->_request = $context->getRequest();
         parent::__construct($objectManager);
     }
 
@@ -194,11 +202,30 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
                     'website_id'     => $websiteId,
                 ],
             ],
+            'customer_listing' => [
+                [
+                    'entity_id' => $customer->getId(),
+                ]
+            ],
         ];
 
         try {
-            $createCommand = $this->objectManager->create('\Aheadworks\RewardPoints\Model\Data\Command\Transaction\Create');
-            $createCommand->execute($transactionData);
+            if (class_exists('Aheadworks\RewardPoints\Model\Data\Command\Transaction\Create')) {
+                $createCommand = $this->objectManager->create('Aheadworks\RewardPoints\Model\Data\Command\Transaction\Create');
+                $createCommand->execute($transactionData);
+            } elseif (class_exists('Aheadworks\RewardPoints\Controller\Adminhtml\Transactions\Save')) {
+                $createCommand = $this->objectManager->create('Aheadworks\RewardPoints\Controller\Adminhtml\Transactions\Save');
+
+                foreach ($transactionData as $key => $value) {
+                    if ($key === 'customer_selections') {
+                        $value = json_encode($value);
+                    }
+
+                    $this->getRequest()->getPost()->set($key, $value);
+                }
+
+                $createCommand->execute();
+            }
         } catch (\Exception $e) {
             $writer = new \Zend\Log\Writer\Stream(BP.'/var/log/connectpos.log');
             $logger = new \Zend\Log\Logger();
@@ -217,9 +244,18 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
         return $this->transactionFactory;
     }
 
-
     public function getTransactionByOrder($id)
     {
         return $this->getTransactionFactory()->load(intval($id))->getBalance();
+    }
+
+    /**
+     * Retrieve request object
+     *
+     * @return \Magento\Framework\App\RequestInterface
+     */
+    public function getRequest()
+    {
+        return $this->_request;
     }
 }
