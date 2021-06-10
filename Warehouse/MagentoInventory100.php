@@ -7,8 +7,10 @@
 
 namespace SM\Integrate\Warehouse;
 
+use Magento\Bundle\Model\Product\Type as Bundle;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilderFactory;
 use Magento\Framework\App\ResourceConnection;
@@ -253,9 +255,9 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     }
 
     /**
-     * @param      $product
-     * @param      $warehouseId
-     * @param null $scopeId
+     * @param \Magento\Catalog\Model\Product $product
+     * @param                                $warehouseId
+     * @param null                           $scopeId
      *
      * @return array|mixed
      */
@@ -276,23 +278,46 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         } catch (\Exception $e) {
         }
 
+        $minQty = $defaultStock['min_qty'] ?? 0;
+        $manageStock = $defaultStock['manage_stock'] ?? 1;
+
+        if (isset($defaultStock['use_config_manage_stock']) && $defaultStock['use_config_manage_stock'] != 0) {
+            $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
+            $defaultStock['manage_stock'] = intval($manageStock);
+        }
+
         $listType = ['simple', 'virtual', 'giftcard', 'aw_giftcard', 'aw_giftcard2'];
+        $type = $product->getTypeInstance();
+
         if (in_array($product->getData('type_id'), $listType)) {
-            $minQty = $defaultStock['min_qty'] ?? 0;
-            $manageStock = $defaultStock['manage_stock'] ?? 1;
-
-            if (isset($defaultStock['use_config_manage_stock']) && $defaultStock['use_config_manage_stock'] != 0) {
-                $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
-                $defaultStock['manage_stock'] = intval($manageStock);
-            }
-
             if ((isset($defaultStock['qty']) && $defaultStock['qty'] > $minQty)
                 || (isset($defaultStock['backorders']) && $defaultStock['backorders'] > 0 && $defaultStock['is_in_stock'] == 1)
-                || $manageStock == 0) {
+                || $manageStock == 0
+            ) {
                 $defaultStock['is_in_stock'] = 1;
             } else {
                 $defaultStock['is_in_stock'] = 0;
             }
+        } elseif ($type instanceof Configurable) {
+            $usedProducts = $type->getUsedProducts($product);
+            $availableQty = 0;
+
+            foreach ($usedProducts as $child) {
+                $childSourceItemMap = $this->getCurrentSourceItemsMap($child->getSku(), $warehouseId);
+                if (isset($childSourceItemMap[$warehouseId])) {
+                    $childSourceItem = $childSourceItemMap[$warehouseId];
+                    $availableQty += $childSourceItem['quantity'];
+                }
+            }
+
+            $defaultStock['qty'] = $availableQty;
+            if ((isset($defaultStock['qty']) && $defaultStock['qty'] > $minQty) || $manageStock == 0) {
+                $defaultStock['is_in_stock'] = 1;
+            } else {
+                $defaultStock['is_in_stock'] = 0;
+            }
+        } elseif ($type instanceof Bundle) {
+            $defaultStock['is_in_stock'] = intval($type->isSalable($product));
         }
 
         return $defaultStock;
@@ -465,7 +490,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         $processor = $this->getSourceItemProcessor();
         if (method_exists($processor, 'process')) {
             $this->getSourceItemProcessor()->process($sku, $sourceItems);
-        } elseif(method_exists($processor, 'execute')) {
+        } elseif (method_exists($processor, 'execute')) {
             $this->getSourceItemProcessor()->execute($sku, $sourceItems);
         }
         $this->triggerRealTimeProduct($item->getProductId());
