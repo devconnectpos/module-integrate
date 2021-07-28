@@ -264,4 +264,12 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
             throw new LocalizedException(__('Reward points should be a valid integer number.'));
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function calculateRewardDiscount($customerId, $points, $websiteId)
+    {
+        // TODO: Implement calculateRewardDiscount() method.
+    }
 }

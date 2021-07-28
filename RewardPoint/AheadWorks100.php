@@ -55,6 +55,7 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
      *
      * @param \Magento\Framework\ObjectManagerInterface    $objectManager
      * @param \SM\Integrate\RewardPoint\Aheadworks\Earning $earning
+     * @param Context                                      $context
      */
     public function __construct(
         ObjectManagerInterface $objectManager,
@@ -257,5 +258,18 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
     public function getRequest()
     {
         return $this->_request;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function calculateRewardDiscount($customerId, $points, $websiteId)
+    {
+        $rateCalculator = $this->objectManager->get('Aheadworks\RewardPoints\Model\Calculator\RateCalculator');
+        return $rateCalculator->calculateRewardDiscount(
+            $customerId,
+            $points,
+            $websiteId
+        );
     }
 }

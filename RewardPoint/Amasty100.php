@@ -224,4 +224,12 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
     {
         return $this->objectManager->get('Amasty\Rewards\Helper\Data');
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function calculateRewardDiscount($customerId, $points, $websiteId)
+    {
+        // TODO: Implement calculateRewardDiscount() method.
+    }
 }

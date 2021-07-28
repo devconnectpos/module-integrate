@@ -50,4 +50,12 @@ class MageStore100 implements RPIntegrateInterface
     public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta)
     {
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function calculateRewardDiscount($customerId, $points, $websiteId)
+    {
+        // TODO: Implement calculateRewardDiscount() method.
+    }
 }
