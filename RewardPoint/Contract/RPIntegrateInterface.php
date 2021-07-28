@@ -37,9 +37,19 @@ interface RPIntegrateInterface
     /**
      * @param $customer
      * @param $websiteId
+     * @param $storeId
      * @param $amountDelta
      *
      * @return mixed
      */
     public function updateCustomerCurrentPointBalance($customer, $websiteId, $storeId, $amountDelta);
+
+    /**
+     * @param $customerId
+     * @param $points
+     * @param $websiteId
+     *
+     * @return mixed
+     */
+    public function calculateRewardDiscount($customerId, $points, $websiteId);
 }
