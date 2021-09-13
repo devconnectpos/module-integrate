@@ -232,7 +232,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         if (in_array($product->getData('type_id'), $listType)) {
             $manageStock = $defaultStock['manage_stock'] ?? 1;
 
-            if (isset($defaultStock['use_config_manage_stock'])) {
+            if (isset($defaultStock['use_config_manage_stock']) && $defaultStock['use_config_manage_stock'] == 1) {
                 $manageStock = $this->storeConfig->getValue('cataloginventory/item_options/manage_stock');
                 $defaultStock['manage_stock'] = intval($manageStock);
             }
