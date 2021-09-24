@@ -82,7 +82,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
             $outletId          = $order->getData('outlet_id');
             $registerId        = $order->getData('register_id');
             $currentShift      = $this->shiftHelperData->getShiftOpening($outletId, $registerId);
-            $giftCardPaymentId = $this->paymentHelper->getPaymentIdByType(RetailPayment::GIFT_CARD_PAYMENT_TYPE);
+            $giftCardPaymentId = $this->paymentHelper->getPaymentIdByType(RetailPayment::GIFT_CARD_PAYMENT_TYPE, $order->getData('register_id'));
             if ($currentShift->getData('id') && $giftCardPaymentId) {
                 $transaction = $this->getRetailTransactionModel();
                 $transaction->setData('payment_id', $giftCardPaymentId)
