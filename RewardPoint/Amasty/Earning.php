@@ -32,7 +32,7 @@ class Earning
     private $customerSessionFactory;
 
     /**
-     * @var \Amasty\Rewards\Model\Calculation
+     * @var \Amasty\Rewards\Model\Calculation|\Amasty\Rewards\Model\Calculation\Earning
      */
     private $calculation;
 
@@ -42,7 +42,12 @@ class Earning
         $this->objectManager = $objectManager;
         $this->customerSessionFactory = $customerSessionFactory;
         $this->ruleRepository = $objectManager->get('Amasty\Rewards\Model\Repository\RuleRepository');
-        $this->calculation = $objectManager->get('Amasty\Rewards\Model\Calculation');
+
+        if (class_exists('Amasty\Rewards\Model\Calculation')) {
+            $this->calculation = $objectManager->get('Amasty\Rewards\Model\Calculation');
+        } elseif (class_exists('Amasty\Rewards\Model\Calculation\Earning')) {
+            $this->calculation = $objectManager->get('Amasty\Rewards\Model\Calculation\Earning');
+        }
     }
 
     /**
@@ -52,6 +57,10 @@ class Earning
      */
     public function calculate($quote)
     {
+        if (!$this->calculation) {
+            return 0;
+        }
+
         $amount = 0;
         $website = $quote->getStore()->getWebsiteId();
         $customerGroup = $quote->getCustomerGroupId() ?: $this->customerSessionFactory->create()->getCustomerGroupId();
@@ -69,7 +78,11 @@ class Earning
                 continue;
             }
 
-            $amount += $this->calculation->calculateSpentReward($address, $rule);
+            if (method_exists($this->calculation, 'calculateSpentReward')) {
+                $amount += $this->calculation->calculateSpentReward($address, $rule);
+            } elseif (method_exists($this->calculation, 'calculateByAddress')) {
+                $amount += $this->calculation->calculateByAddress($address, $rule);
+            }
         }
 
         $rules = $this->ruleRepository->getRulesByAction(self::ORDER_COMPLETED_ACTION, $website, $customerGroup);
