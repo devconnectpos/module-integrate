@@ -228,10 +228,11 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
                 $createCommand->execute();
             }
         } catch (\Exception $e) {
-            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-            $logger = $objectManager->get('Psr\Log\LoggerInterface');
-            $logger->critical('====> Unable to adjust customer balance');
-            $logger->critical($e->getMessage()."\n".$e->getTraceAsString());
+            $writer = new \Zend\Log\Writer\Stream(BP.'/var/log/connectpos.log');
+            $logger = new \Zend\Log\Logger();
+            $logger->addWriter($writer);
+            $logger->info('====> Unable to adjust customer balance');
+            $logger->info($e->getMessage()."\n".$e->getTraceAsString());
         }
     }
 

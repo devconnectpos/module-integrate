@@ -9,24 +9,20 @@ namespace SM\Integrate\Model;
 
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Store\Model\StoreManagerInterface;
 use SM\Core\Api\Data\AwCodePool;
 use SM\Core\Api\Data\AwCodePool\AwGcCode;
 use SM\Integrate\Helper\Data as IntegrateHelper;
-use SM\Integrate\GiftCard\Contract\GCIntegrateInterface;
+use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
 use SM\XRetail\Helper\DataConfig;
 use SM\XRetail\Repositories\Contract\ServiceAbstract;
 use Magento\Config\Model\Config\Loader;
-use SM\Integrate\GiftCard\Magento2EE;
-use SM\Integrate\GiftCard\Amasty;
-use SM\Integrate\GiftCard\AheadWorks121;
 
 class GCIntegrateManagement extends ServiceAbstract
 {
 
     /**
-     * @var GCIntegrateInterface
+     * @var RPIntegrateInterface
      */
     protected $currentIntegrateModel;
 
@@ -38,20 +34,14 @@ class GCIntegrateManagement extends ServiceAbstract
             'aheadWorks' => [
                 [
                     "version" => "~1.2.1",
-                    "class"   => AheadWorks121::class,
-                ],
-            ],
-            'amasty'     => [
-                [
-                    "version" => "~2.5.4",
-                    "class"   => Amasty::class,
-                ],
+                    "class"   => "SM\\Integrate\\GiftCard\\AheadWorks121"
+                ]
             ],
             'mage2_ee'   => [
                 [
                     "version" => "~2.1.7",
-                    "class"   => Magento2EE::class,
-                ],
+                    "class"   => "SM\\Integrate\\GiftCard\\Magento2EE"
+                ]
             ],
         ];
     /**
@@ -68,19 +58,14 @@ class GCIntegrateManagement extends ServiceAbstract
     private $integrateHelper;
 
     /**
-     * @var Json
-     */
-    private $jsonSerializer;
-
-    /**
      * GCIntegrateManagement constructor.
      *
-     * @param \Magento\Framework\App\RequestInterface    $requestInterface
-     * @param \SM\XRetail\Helper\DataConfig              $dataConfig
+     * @param \Magento\Framework\App\RequestInterface $requestInterface
+     * @param \SM\XRetail\Helper\DataConfig $dataConfig
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
-     * @param \Magento\Framework\ObjectManagerInterface  $objectManager
-     * @param \Magento\Config\Model\Config\Loader        $loader
-     * @param IntegrateHelper                            $integrateHelper
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param \Magento\Config\Model\Config\Loader $loader
+     * @param IntegrateHelper $integrateHelper
      */
     public function __construct(
         RequestInterface $requestInterface,
@@ -88,13 +73,11 @@ class GCIntegrateManagement extends ServiceAbstract
         StoreManagerInterface $storeManager,
         ObjectManagerInterface $objectManager,
         Loader $loader,
-        IntegrateHelper $integrateHelper,
-        Json $jsonSerializer
+        IntegrateHelper $integrateHelper
     ) {
         $this->objectManager = $objectManager;
-        $this->configLoader = $loader;
+        $this->configLoader  = $loader;
         $this->integrateHelper = $integrateHelper;
-        $this->jsonSerializer = $jsonSerializer;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -104,23 +87,19 @@ class GCIntegrateManagement extends ServiceAbstract
     public function getCurrentIntegrateModel()
     {
         $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
-        $configIntegrateGiftCardValue = isset($config['xretail/pos/integrate_gc']) ?
+        $configIntegrateGiftCardValue      = isset($config['xretail/pos/integrate_gc']) ?
             $config['xretail/pos/integrate_gc']['value'] : 'none';
 
         $configPWA = $this->configLoader->getConfigByPath('pwa/integrate', 'default', 0);
-        $configIntegrateGiftCardValueInPWA = isset($configPWA['pwa/integrate/pwa_integrate_gift_card']) ?
+        $configIntegrateGiftCardValueInPWA      = isset($configPWA['pwa/integrate/pwa_integrate_gift_card']) ?
             $configPWA['pwa/integrate/pwa_integrate_gift_card']['value'] : 'none';
 
-        if (!is_null($this->currentIntegrateModel)) {
-            return $this->currentIntegrateModel;
-        }
-
-        if ($configIntegrateGiftCardValue !== 'none') {
+        if (is_null($this->currentIntegrateModel) && $configIntegrateGiftCardValue != 'none') {
             // FIXME: do something to get current integrate class
             $class = self::$LIST_GC_INTEGRATE[$configIntegrateGiftCardValue][0]['class'];
 
             $this->currentIntegrateModel = $this->objectManager->create($class);
-        } elseif ($configIntegrateGiftCardValueInPWA !== 'none') {
+        } elseif (is_null($this->currentIntegrateModel) && $configIntegrateGiftCardValueInPWA != 'none') {
             $class = self::$LIST_GC_INTEGRATE['aheadWorks'][0]['class'];
 
             $this->currentIntegrateModel = $this->objectManager->create($class);
@@ -169,7 +148,6 @@ class GCIntegrateManagement extends ServiceAbstract
 
     /**
      * CPOS API function to get AheadWorks Gift Card code pools
-     *
      * @return mixed
      * @throws \ReflectionException
      */
@@ -185,7 +163,7 @@ class GCIntegrateManagement extends ServiceAbstract
 
         $searchCriteria = $this->getSearchCriteria();
         /** @var \Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection $collection */
-        $collection = $this->objectManager->create('Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection');
+        $collection   = $this->objectManager->create('Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection');
         $collection->setCurPage($searchCriteria->getData('currentPage'));
         $collection->setPageSize($searchCriteria->getData('pageSize'));
 
@@ -229,84 +207,5 @@ class GCIntegrateManagement extends ServiceAbstract
             ->setItems($results)
             ->setSearchCriteria($this->getSearchCriteria())
             ->getOutput();
-    }
-
-    /**
-     * @return array
-     * @throws \ReflectionException
-     */
-    public function getAmastyGiftCardCodePools()
-    {
-        if (!$this->integrateHelper->isUsingAmastyGiftCard()) {
-            return $this->getSearchResult()
-                ->setItems([])
-                ->setSearchCriteria($this->getSearchCriteria())
-                ->getOutput();
-        }
-
-        $codePools = $this->getAmastyCodePoolRepository()->getList();
-        $results = [];
-
-        foreach ($codePools as $codePool) {
-            $rule = $this->getAmastyCodePoolRepository()->getRuleByCodePoolId($codePool->getCodePoolId());
-            $codePoolRule = null;
-
-            if (!is_null($rule)) {
-                $codePoolRule = [
-                    'id'         => $rule->getRuleId(),
-                    'pool_id'    => $rule->getCodePoolId(),
-                    'conditions' => $this->jsonSerializer->unserialize($rule->getConditionsSerialized()),
-                ];
-            }
-
-            $results[] = [
-                'id'       => $codePool->getCodePoolId(),
-                'name'     => $codePool->getTitle(),
-                'template' => $codePool->getTemplate(),
-                'rule'     => $codePoolRule,
-                'codes'    => $this->getAmastyCodesByCodePoolId($codePool->getCodePoolId()),
-            ];
-        }
-
-        return $this->getSearchResult()
-            ->setItems($results)
-            ->setSearchCriteria($this->getSearchCriteria())
-            ->getOutput();
-    }
-
-    /**
-     * @return \Amasty\GiftCard\Api\CodePoolRepositoryInterface|mixed
-     */
-    protected function getAmastyCodePoolRepository()
-    {
-        return $this->objectManager->get('Amasty\GiftCard\Api\CodePoolRepositoryInterface');
-    }
-
-    /**
-     * @param $id
-     *
-     * @return array
-     */
-    protected function getAmastyCodesByCodePoolId($id)
-    {
-        $collection = $this->objectManager->get('Amasty\GiftCard\Model\Code\ResourceModel\Collection');
-        $results = [];
-
-        if (!$collection) {
-            return $results;
-        }
-
-        $items = $collection->addFieldToFilter('code_pool_id', $id)->getItems();
-
-        foreach ($items as $item) {
-            $results[] = [
-                'code'    => $item->getCode(),
-                'id'      => $item->getCodeId(),
-                'pool_id' => $item->getCodePoolId(),
-                'used'    => $item->getStatus(),
-            ];
-        }
-
-        return $results;
     }
 }
