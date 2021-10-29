@@ -50,19 +50,18 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
 
             if (!isset($giftData['gift_code'])) {
                 continue;
-            } else {
-                $giftData['gift_code'] = preg_replace('/\s+/', '', $giftData['gift_code']);
             }
+
+            $giftData['gift_code'] = preg_replace('/\s+/', '', $giftData['gift_code']);
 
             try {
                 $giftcardCode = $giftData['gift_code'];
-                $giftcard     = $this->getGiftCardRepository()
-                                     ->getByCode($giftcardCode, $this->getQuote()->getStore()->getWebsiteId());
+                $giftcard = $this->getGiftCardRepository()
+                    ->getByCode($giftcardCode, $this->getQuote()->getStore()->getWebsiteId());
             } catch (NoSuchEntityException $e) {
-                $mess = 'The specified Gift Card code :' .$giftData['gift_code']. ' is not valid';
+                $mess = 'The specified Gift Card code :'.$giftData['gift_code'].' is not valid';
                 throw new NoSuchEntityException(__($mess));
             }
-
 
             if (!$this->getGiftCardValidator()->isValid($giftcard)) {
                 $messages = $this->getGiftCardValidator()->getMessages();
@@ -70,21 +69,22 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
             }
 
             $giftcardQuoteItems = $this->getGiftCardQuoteCollectionFactory()
-                                       ->create()
-                                       ->addFieldToFilter('quote_id', $this->getQuote()->getId())
-                                       ->addFieldToFilter('giftcard_id', $giftcard->getId())
-                                       ->load()
-                                       ->getItems();
+                ->create()
+                ->addFieldToFilter('quote_id', $this->getQuote()->getId())
+                ->addFieldToFilter('giftcard_id', $giftcard->getId())
+                ->load()
+                ->getItems();
 
             if ($giftcardQuoteItems) {
                 throw new LocalizedException(__('The specified Gift Card code already in the quote'));
             }
 
             if ($this->getQuote()->getExtensionAttributes()
-                && $this->getQuote()->getExtensionAttributes()->getAwGiftcardCodes()) {
+                && $this->getQuote()->getExtensionAttributes()->getAwGiftcardCodes()
+            ) {
                 $giftcards = $this->getQuote()
-                                  ->getExtensionAttributes()
-                                  ->getAwGiftcardCodes();
+                    ->getExtensionAttributes()
+                    ->getAwGiftcardCodes();
                 /** @var GiftcardQuoteInterface $giftcard */
                 foreach ($giftcards as $giftcardData) {
                     if ($giftcardData->getGiftcardCode() == $giftcard->getCode()) {
@@ -108,7 +108,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
      *
      * @return $this
      */
-    protected function addGiftcardToQuote($giftcard, \Magento\Quote\Model\Quote $quote , $maxValueGCAmountCanUse)
+    protected function addGiftcardToQuote($giftcard, \Magento\Quote\Model\Quote $quote, $maxValueGCAmountCanUse)
     {
         $extensionAttributes = $quote->getExtensionAttributes()
             ? $quote->getExtensionAttributes()
@@ -215,7 +215,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
     public function getQuoteGCData()
     {
         $quoteListGC = [];
-        $quote       = $this->getQuote();
+        $quote = $this->getQuote();
         $quoteGiftCards = [];
         if ($quote->getExtensionAttributes()) {
             $quoteGiftCards = $quote->getExtensionAttributes()->getAwGiftcardCodes();
@@ -232,6 +232,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
                 $quoteListGC[] = $quoteGcData;
             }
         }
+
         return $quoteListGC;
     }
 
@@ -274,7 +275,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
     {
         if (is_null($this->refundToGCProductId)) {
             /** @var \Magento\Catalog\Modelf\Product $productModel */
-            $productModel              = $this->objectManager->create('Magento\Catalog\Model\Product');
+            $productModel = $this->objectManager->create('Magento\Catalog\Model\Product');
             $this->refundToGCProductId = $productModel->getResource()->getIdBySku(self::AHW_REFUND_TO_GC_SKU);
 
             if (!$this->refundToGCProductId) {
@@ -285,48 +286,47 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
         return $this->refundToGCProductId;
     }
 
-
     public function createRefundToGCProduct()
     {
-            /** @var \Magento\Catalog\Model\Product $product */
-            $product = $this->objectManager->create('Magento\Catalog\Model\Product');
-            $product->setUrlKey(uniqid("ahw_refund_gc"));
-            $product->setName('Ahw_Refund_GiftCard_Product');
-            $product->setTypeId(\Aheadworks\Giftcard\Model\Product\Type\Giftcard::TYPE_CODE);
-            $product->setStatus(2);
-            $product->setAttributeSetId($this->getAttributeSetForRefundToGCProduct());
-            $product->setSku(self::AHW_REFUND_TO_GC_SKU);
-            $product->setVisibility(4);
-            $product->setPrice(0);
-            $product->setStockData(
-                [
-                    'use_config_manage_stock'          => 0, //'Use config settings' checkbox
-                    'manage_stock'                     => 0, //manage stock
-                    'min_sale_qty'                     => 1, //Minimum Qty Allowed in Shopping Cart
-                    'max_sale_qty'                     => 2, //Maximum Qty Allowed in Shopping Cart
-                    'is_in_stock'                      => 1, //Stock Availability
-                    'qty'                              => 999999, //qty,
-                    'original_inventory_qty'           => '999999',
-                    'use_config_min_qty'               => '0',
-                    'use_config_min_sale_qty'          => '0',
-                    'use_config_max_sale_qty'          => '0',
-                    'is_qty_decimal'                   => '1',
-                    'is_decimal_divided'               => '0',
-                    'use_config_backorders'            => '1',
-                    'use_config_notify_stock_qty'      => '0',
-                    'use_config_enable_qty_increments' => '0',
-                    'use_config_qty_increments'        => '0',
-                ]
-            );
+        /** @var \Magento\Catalog\Model\Product $product */
+        $product = $this->objectManager->create('Magento\Catalog\Model\Product');
+        $product->setUrlKey(uniqid("ahw_refund_gc"));
+        $product->setName('Ahw_Refund_GiftCard_Product');
+        $product->setTypeId(\Aheadworks\Giftcard\Model\Product\Type\Giftcard::TYPE_CODE);
+        $product->setStatus(2);
+        $product->setAttributeSetId($this->getAttributeSetForRefundToGCProduct());
+        $product->setSku(self::AHW_REFUND_TO_GC_SKU);
+        $product->setVisibility(4);
+        $product->setPrice(0);
+        $product->setStockData(
+            [
+                'use_config_manage_stock'          => 0, //'Use config settings' checkbox
+                'manage_stock'                     => 0, //manage stock
+                'min_sale_qty'                     => 1, //Minimum Qty Allowed in Shopping Cart
+                'max_sale_qty'                     => 2, //Maximum Qty Allowed in Shopping Cart
+                'is_in_stock'                      => 1, //Stock Availability
+                'qty'                              => 999999, //qty,
+                'original_inventory_qty'           => '999999',
+                'use_config_min_qty'               => '0',
+                'use_config_min_sale_qty'          => '0',
+                'use_config_max_sale_qty'          => '0',
+                'is_qty_decimal'                   => '1',
+                'is_decimal_divided'               => '0',
+                'use_config_backorders'            => '1',
+                'use_config_notify_stock_qty'      => '0',
+                'use_config_enable_qty_increments' => '0',
+                'use_config_qty_increments'        => '0',
+            ]
+        );
 
-            $product->setData(ProductAttributeInterface::CODE_AW_GC_TYPE, GiftcardType::VALUE_COMBINED);
-            $product->setData(ProductAttributeInterface::CODE_AW_GC_ALLOW_OPEN_AMOUNT, true);
-            $product->setData(ProductAttributeInterface::CODE_AW_GC_OPEN_AMOUNT_MIN, 0.01);
-            $product->setData(ProductAttributeInterface::CODE_AW_GC_OPEN_AMOUNT_MAX, 999999999999);
-            $product->setData(ProductAttributeInterface::CODE_AW_GC_DESCRIPTION, 'refund to giftcard product by connectpos');
-            return $product->save();
+        $product->setData(ProductAttributeInterface::CODE_AW_GC_TYPE, GiftcardType::VALUE_COMBINED);
+        $product->setData(ProductAttributeInterface::CODE_AW_GC_ALLOW_OPEN_AMOUNT, true);
+        $product->setData(ProductAttributeInterface::CODE_AW_GC_OPEN_AMOUNT_MIN, 0.01);
+        $product->setData(ProductAttributeInterface::CODE_AW_GC_OPEN_AMOUNT_MAX, 999999999999);
+        $product->setData(ProductAttributeInterface::CODE_AW_GC_DESCRIPTION, 'refund to giftcard product by connectpos');
+
+        return $product->save();
     }
-
 
     /**
      * PERFECT CODE
@@ -338,14 +338,14 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
         $productEntityTypeId = $this->objectManager->create(
             '\Magento\Eav\Model\Entity\Type'
         )->loadByCode('catalog_product')
-         ->getId();
+            ->getId();
         $eavAttributeSetCollection = $this->objectManager->create(
             '\Magento\Eav\Model\Entity\Attribute\Set'
         )->getCollection();
 
         // FIXME: We will implement setting for admin select attribute set of customer later.
         $eavAttributeSetCollection->addFieldToFilter('attribute_set_name', 'Default')
-                                  ->addFieldToFilter('entity_type_id', $productEntityTypeId);
+            ->addFieldToFilter('entity_type_id', $productEntityTypeId);
 
         $id = $eavAttributeSetCollection->getFirstItem()->getId();
 
@@ -355,7 +355,7 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
     public function getGCCodePool()
     {
         /** @var \Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection $collection */
-        $collection   = $this->objectManager->create(
+        $collection = $this->objectManager->create(
             'Aheadworks\Giftcard\Model\ResourceModel\Pool\Collection'
         );
         $listCodePool = [];
@@ -373,8 +373,10 @@ class AheadWorks121 extends AbstractGCIntegrate implements GCIntegrateInterface
         )->load($this->getRefundToGCProductId());
 
         if ((!isset($data['is_default_codepool_pattern']) || $data['is_default_codepool_pattern'] != true)
-            && isset($data['code_pool']) && !!$data['code_pool']
-            && class_exists('\Aheadworks\Giftcard\Api\Data\ProductAttributeInterface')) {
+            && isset($data['code_pool'])
+            && !!$data['code_pool']
+            && class_exists('\Aheadworks\Giftcard\Api\Data\ProductAttributeInterface')
+        ) {
             $productModel->setData(ProductAttributeInterface::CODE_AW_GC_POOL, $data['code_pool']);
         } else {
             $productModel->unsetData(ProductAttributeInterface::CODE_AW_GC_POOL);

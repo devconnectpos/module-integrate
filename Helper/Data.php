@@ -163,6 +163,8 @@ class Data
                     $this->isIntegrateGc = true;
                 } elseif ($configValue === 'mage2_ee' && $this->isGiftCardMagento2EE()) {
                     $this->isIntegrateGc = true;
+                } elseif ($configValue === 'amasty' && $this->isGiftCardAmasty()) {
+                    $this->isIntegrateGc = true;
                 } else {
                     $this->isIntegrateGc = false;
                 }
@@ -275,13 +277,6 @@ class Data
     {
         return !!$this->moduleList->getOne("Aheadworks_Rma");
     }
-    /**
-     * @return bool
-     */
-    public function isAHWGiftCardExist()
-    {
-        return !!$this->moduleList->getOne("Aheadworks_Giftcard");
-    }
 
     /**
      * @return bool
@@ -311,6 +306,9 @@ class Data
         return !!$this->moduleList->getOne("Amasty_Rewards") && $configValue === 'amasty';
     }
 
+    /**
+     * @return bool
+     */
     public function isAmastyRewardPointsExist()
     {
         return !!$this->moduleList->getOne("Amasty_Rewards");
@@ -319,9 +317,55 @@ class Data
     /**
      * @return bool
      */
+    public function isAHWGiftCardExist()
+    {
+        return !!$this->moduleList->getOne("Aheadworks_Giftcard");
+    }
+
+    /**
+     * @return bool
+     */
     public function isGiftCardMagento2EE()
     {
         return !!$this->moduleList->getOne("Magento_GiftCardAccount");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isGiftCardAmasty()
+    {
+        return !!$this->moduleList->getOne("Amasty_GiftCard");
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUsingAHWGiftCard() {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
+
+        return $this->isAHWGiftCardExist() && $configValue === 'aheadWorks';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUsingMagentoGiftCard() {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_rp']) ? $config['xretail/pos/integrate_rp']['value'] : 'none';
+
+        return $this->isGiftCardMagento2EE() && $configValue === 'mage2_ee';
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUsingAmastyGiftCard() {
+        $config      = $this->getConfigLoaderData();
+        $configValue = isset($config['xretail/pos/integrate_gc']) ? $config['xretail/pos/integrate_gc']['value'] : 'none';
+
+        return $this->isGiftCardAmasty() && $configValue === 'amasty';
     }
 
     /**
