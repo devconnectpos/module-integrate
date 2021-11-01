@@ -2,11 +2,17 @@
 
 namespace SM\Integrate\GiftCard;
 
+use Magento\Framework\Exception\CouldNotDeleteException;
 use SM\Integrate\GiftCard\Contract\AbstractGCIntegrate;
 use SM\Integrate\GiftCard\Contract\GCIntegrateInterface;
 
 class Amasty extends AbstractGCIntegrate implements GCIntegrateInterface
 {
+    const GIFT_CARD_ID = 'id';
+    const GIFT_CARD_CODE = 'code';
+    const GIFT_CARD_AMOUNT = 'amount';
+    const GIFT_CARD_BASE_AMOUNT = 'b_amount';
+
     /**
      * @param $giftCardData
      *
@@ -41,17 +47,65 @@ class Amasty extends AbstractGCIntegrate implements GCIntegrateInterface
      */
     public function getQuoteGCData()
     {
-        // TODO: Implement getQuoteGCData() method.
+        $quoteListGC = [];
+        $quote = $this->getQuote();
+        $quoteGiftCards = [];
+
+        if ($extensionAttributes = $quote->getExtensionAttributes()) {
+            $quoteGiftCards = $extensionAttributes->getAmGiftcardQuote() ? $extensionAttributes->getAmGiftcardQuote()->getGiftCards() : [];
+        }
+
+        if (is_array($quoteGiftCards) && count($quoteGiftCards) > 0) {
+            foreach ($quoteGiftCards as $giftCard) {
+                $gcCode = $giftCard[self::GIFT_CARD_CODE] ?? '';
+                $gcBaseAmount = isset($giftCard[self::GIFT_CARD_BASE_AMOUNT]) ? -$giftCard[self::GIFT_CARD_BASE_AMOUNT] : 0;
+                $gcAmount = isset($giftCard[self::GIFT_CARD_AMOUNT]) ? -$giftCard[self::GIFT_CARD_AMOUNT] : 0;
+                $quoteGcData = [
+                    'is_valid'             => true,
+                    'gift_code'            => $gcCode,
+                    'base_giftcard_amount' => $gcBaseAmount,
+                    'giftcard_amount'      => $gcAmount,
+                ];
+                $quoteListGC[] = $quoteGcData;
+            }
+        }
+
+        return $quoteListGC;
     }
 
+    /**
+     * @param $giftData
+     *
+     * @throws CouldNotDeleteException
+     */
     public function removeGiftCard($giftData)
     {
-        // TODO: Implement removeGiftCard() method.
+        $quote = $this->getQuote();
+        $quoteGiftCards = [];
+
+        if (!$quote->getItemsCount()) {
+            throw new CouldNotDeleteException(__('The "%1" Cart doesn\'t contain products.', $quote->getId()));
+        }
+
+        if ($extensionAttributes = $quote->getExtensionAttributes()) {
+            $quoteGiftCards = $extensionAttributes->getAmGiftcardQuote() ? $extensionAttributes->getAmGiftcardQuote()->getGiftCards() : [];
+        }
+
+        if (is_array($quoteGiftCards) && count($quoteGiftCards) > 0) {
+            foreach ($quoteGiftCards as $giftCard) {
+                try {
+                    $gc = $this->getAccountRepository()->getByCode($giftCard[self::GIFT_CARD_CODE] ?? '');
+                    $this->getGiftCardCartProcessor()->removeFromCart($gc, $quote);
+                } catch (\Exception $e) {
+                    throw new CouldNotDeleteException(__("The gift card couldn't be deleted from the quote: " . $e->getMessage()));
+                }
+            }
+        }
+
     }
 
     public function getRefundToGCProductId()
     {
-        // TODO: Implement getRefundToGCProductId() method.
     }
 
     /**
@@ -82,8 +136,27 @@ class Amasty extends AbstractGCIntegrate implements GCIntegrateInterface
         return $this->objectManager->get('Amasty\GiftCard\Api\CodePoolRepositoryInterface');
     }
 
+    /**
+     * @return \Amasty\GiftCardAccount\Model\GiftCardAccount\GiftCardAccountManagement|mixed
+     */
     private function getGiftCardAccountManagement()
     {
-        return $this->objectManager->get('\Amasty\GiftCardAccount\Model\GiftCardAccount\GiftCardAccountManagement');
+        return $this->objectManager->get('Amasty\GiftCardAccount\Model\GiftCardAccount\GiftCardAccountManagement');
+    }
+
+    /**
+     * @return \Amasty\GiftCardAccount\Model\GiftCardAccount\Repository|mixed
+     */
+    private function getAccountRepository()
+    {
+        return $this->objectManager->get('Amasty\GiftCardAccount\Model\GiftCardAccount\Repository');
+    }
+
+    /**
+     * @return \Amasty\GiftCardAccount\Model\GiftCardAccount\GiftCardCartProcessor|mixed
+     */
+    private function getGiftCardCartProcessor()
+    {
+        return $this->objectManager->get('Amasty\GiftCardAccount\Model\GiftCardAccount\GiftCardCartProcessor');
     }
 }
