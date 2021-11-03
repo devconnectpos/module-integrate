@@ -230,8 +230,8 @@ class AheadWorks100 extends AbstractRPIntegrate implements RPIntegrateInterface
         } catch (\Exception $e) {
             $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
             $logger = $objectManager->get('Psr\Log\LoggerInterface');
-            $logger->critical('====> Unable to adjust customer balance');
-            $logger->critical($e->getMessage()."\n".$e->getTraceAsString());
+            $logger->critical("====> [CPOS] Unable to adjust customer balance: {$e->getMessage()}");
+            $logger->critical($e->getTraceAsString());
         }
     }
 

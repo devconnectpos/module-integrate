@@ -164,12 +164,11 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
             }
             try {
                 $balance->save();
-            } catch (\Exception $e) {
-                $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/connectpos.log');
-                $logger = new \Zend\Log\Logger();
-                $logger->addWriter($writer);
-                $logger->info('====> Update customer store credit balance failed');
-                $logger->info($e->getMessage() . "\n" . $e->getTraceAsString());
+            } catch (\Throwable $e) {
+                $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+                $logger = $objectManager->get('Psr\Log\LoggerInterface');
+                $logger->info("====> [CPOS] Update customer store credit balance failed: {$e->getMessage()}");
+                $logger->info($e->getTraceAsString());
             }
         }
     }
