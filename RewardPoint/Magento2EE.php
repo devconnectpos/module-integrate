@@ -241,12 +241,11 @@ class Magento2EE extends AbstractRPIntegrate implements RPIntegrateInterface
             $reward->setAction(0)
                 ->setActionEntity($customer)
                 ->updateRewardPoints();
-        } catch (\Exception $e) {
-            $writer = new \Zend\Log\Writer\Stream(BP . '/var/log/connectpos.log');
-            $logger = new \Zend\Log\Logger();
-            $logger->addWriter($writer);
-            $logger->info('====> Unable to adjust reward points');
-            $logger->info($e->getMessage() . "\n" . $e->getTraceAsString());
+        } catch (\Throwable $e) {
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+            $logger = $objectManager->get('Psr\Log\LoggerInterface');
+            $logger->info("====> [CPOS] Unable to adjust reward points: {$e->getMessage()}");
+            $logger->info($e->getTraceAsString());
         }
     }
 
