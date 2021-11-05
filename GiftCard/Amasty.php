@@ -24,6 +24,10 @@ class Amasty extends AbstractGCIntegrate implements GCIntegrateInterface
             $this->getQuote()->setItems([]);
         }
 
+        if (!$this->getQuote()->getItemsCount()) {
+            return;
+        }
+
         foreach ($giftCardData as $data) {
             if (isset($data['is_delete']) && $data['is_delete'] === true) {
                 $this->removeGiftCard($data);
