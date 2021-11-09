@@ -105,7 +105,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
 
     protected $storeManager;
     /**
-     * @param StoreRepository      $storeRepository
+     * @param StoreRepository $storeRepository
      */
     protected $storeRepository;
 
@@ -124,13 +124,13 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \SM\Integrate\Helper\Data $integrateHelperData,
         \SM\XRetail\Helper\Data $retailHelper,
-        StoreRepository $storeRepository)
-    {
-        $this->storeManager       = $storeManager;
+        StoreRepository $storeRepository
+    ) {
+        $this->storeManager = $storeManager;
         $this->integrateHelperData = $integrateHelperData;
-        $this->localeDate         = $localeDate;
-        $this->storeRepository    = $storeRepository;
-        $this->retailHelper       = $retailHelper;
+        $this->localeDate = $localeDate;
+        $this->storeRepository = $storeRepository;
+        $this->retailHelper = $retailHelper;
         parent::__construct($objectManager);
     }
 
@@ -144,6 +144,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
             }
         }
         $websiteIds = array_unique($websiteIds);
+
         return $websiteIds;
     }
 
@@ -167,7 +168,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
 
             try {
                 $giftcardCode = $giftData['gift_code'];
-                $giftcard     = $this->getGiftCardRepository()->loadByCode($giftcardCode);
+                $giftcard = $this->getGiftCardRepository()->loadByCode($giftcardCode);
 
                 if ($this->isValid(true, true, $website, true, $giftcard)) {
                     $cards = $this->getGiftCardAccountHelper()->getCards($this->getQuote());
@@ -183,9 +184,9 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
                         }
                     }
                     $cards[] = [
-                        self::ID => $giftcard['giftcardaccount_id'],
-                        self::CODE => $giftcard['code'],
-                        self::AMOUNT => $giftcard['balance'],
+                        self::ID          => $giftcard['giftcardaccount_id'],
+                        self::CODE        => $giftcard['code'],
+                        self::AMOUNT      => $giftcard['balance'],
                         self::BASE_AMOUNT => $giftcard['balance'],
                     ];
                     $this->getGiftCardAccountHelper()->setCards($this->getQuote(), $cards);
@@ -194,7 +195,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
                 }
             } catch (NoSuchEntityException $e) {
                 throw new NoSuchEntityException(
-                    __('The specified Gift Card code :' .$giftData['gift_code']. ' is not valid')
+                    __('The specified Gift Card code :'.$giftData['gift_code'].' is not valid')
                 );
             }
 
@@ -212,12 +213,11 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
     public function getQuoteGCData()
     {
         $quoteListGC = [];
-        $quote       = $this->getQuote();
+        $quote = $this->getQuote();
         $address = $quote->getShippingAddress();
         if ($quote->isVirtual()) {
             $address = $quote->getBillingAddress();
         }
-        $usedGiftCards = [];
         $usedGiftCards = $this->retailHelper->unserialize($address->getData('used_gift_cards'), true);
 
         if (count($usedGiftCards) > 0) {
@@ -226,11 +226,12 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
                     'is_valid'             => true,
                     'gift_code'            => $giftCard['c'],
                     'base_giftcard_amount' => -$giftCard['ba'],
-                    'giftcard_amount'      => -$giftCard['a']
+                    'giftcard_amount'      => -$giftCard['a'],
                 ];
                 $quoteListGC[] = $quoteGcData;
             }
         }
+
         return $quoteListGC;
     }
 
@@ -333,6 +334,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
         if ($this->integrateHelperData->isGiftCardMagento2EE() && is_null($this->giftCardAccountData)) {
             $this->giftCardAccountData = $this->objectManager->create('Magento\GiftCardAccount\Helper\Data');
         }
+
         return $this->giftCardAccountData;
     }
 
@@ -347,7 +349,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
     public function removeGiftCard($giftData)
     {
         $giftcardCode = $giftData['gift_code'];
-        $giftcard     = $this->getGiftCardRepository()->loadByCode($giftcardCode);
+        $giftcard = $this->getGiftCardRepository()->loadByCode($giftcardCode);
 
         if (!$giftcard['giftcardaccount_id']) {
             throw new LocalizedException(__('Please correct the gift card account code: "%1".', $giftcard['code']));
@@ -361,6 +363,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
                     $this->getGiftCardAccountHelper()->setCards($this->getQuote(), $cards);
 
                     $this->getQuote()->collectTotals()->save();
+
                     return $this;
                 }
             }
@@ -388,7 +391,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
     {
         if (is_null($this->refundToGCProductId)) {
             /** @var \Magento\Catalog\Model\Product $productModel */
-            $productModel              = $this->objectManager->create('Magento\Catalog\Model\Product');
+            $productModel = $this->objectManager->create('Magento\Catalog\Model\Product');
             $this->refundToGCProductId = $productModel->getResource()->getIdBySku(self::GIFT_CARD_REFUND_TO_GC_SKU);
 
             if (!$this->refundToGCProductId) {
@@ -441,6 +444,7 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
         $product->setData(GiftCardType::ALLOW_OPEN_AMOUNT_COLUMN, GiftcardModel::OPEN_AMOUNT_ENABLED);
         $product->setData(GiftCardType::OPEN_AMOUNT_MIN_COLUMN, 0.01);
         $product->setData(GiftCardType::OPEN_AMOUNT_MAX_COLUMN, 99999);
+
         return $product->save();
     }
 
@@ -452,25 +456,30 @@ class Magento2EE extends AbstractGCIntegrate implements GCIntegrateInterface
     private function getAttributeSetForRefundToGCProduct()
     {
         $productEntityTypeId = $this->objectManager->create('\Magento\Eav\Model\Entity\Type')
-                                                   ->loadByCode('catalog_product')
-                                                   ->getId();
+            ->loadByCode('catalog_product')
+            ->getId();
         $eavAttributeSetCollection = $this->objectManager->create('\Magento\Eav\Model\Entity\Attribute\Set')
-                                                         ->getCollection();
+            ->getCollection();
+
+        if (is_null($eavAttributeSetCollection)) {
+            return 0;
+        }
 
         // FIXME: We will implement setting for admin select attribute set of customer later.
         $eavAttributeSetCollection->addFieldToFilter('attribute_set_name', 'Default')
-                                  ->addFieldToFilter('entity_type_id', $productEntityTypeId);
+            ->addFieldToFilter('entity_type_id', $productEntityTypeId);
 
         $id = $eavAttributeSetCollection->getFirstItem()
-                                        ->getId();
+            ->getId();
 
         if (is_null($id)) {
-            $eavAttributeSetCollection = $this->entityAttrSet->getCollection();
+            $eavAttributeSetCollection = $this->objectManager->create('\Magento\Eav\Model\Entity\Attribute\Set')->getCollection();
 
             return $eavAttributeSetCollection->addFieldToFilter('entity_type_id', $productEntityTypeId)
-                                             ->getFirstItem()
-                                             ->getId();
+                ->getFirstItem()
+                ->getId();
         }
+
         return $id;
     }
 
