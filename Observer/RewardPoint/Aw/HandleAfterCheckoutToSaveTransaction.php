@@ -94,6 +94,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
         $magentoEECondition = $this->integrateHelper->isRewardPointMagento2EE() && $order->getData('reward_currency_amount');
         $aheadWorksCondition = $this->integrateHelper->isAHWRewardPoints() && $order->getData('aw_reward_points');
         $amastyCondition = $this->integrateHelper->isAmastyRewardPoints() && floatval($quote->getAmrewardsPoint()) > 0;
+        $mirasvitCondition = $this->integrateHelper->isMirasvitRewardPoints();
 
         $spentAmount = 0;
 
@@ -103,6 +104,8 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
             $spentAmount = floatval($order->getData('aw_reward_points_amount'));
         } elseif ($amastyCondition) {
             $spentAmount = floatval($quote->getAmrewardsPoint());
+        } elseif ($mirasvitCondition) {
+            $spentAmount = floatval($quote->getData('reward_points_amount'));
         }
 
         $currencyRate = isset($rates[$currentCurrencyCode]) ? $rates[$currentCurrencyCode] : 1;
