@@ -74,6 +74,10 @@ class StorePickUpIntegrateManagement extends ServiceAbstract
         if (is_null($this->currentIntegrateModel)) {
             // FIXME: do something to get current integrate class
             if ($configIntegrateStorePickUpValue !== 'none') {
+                if (!isset(self::$LIST_STORE_PICK_UP_INTEGRATE[$configIntegrateStorePickUpValue])) {
+                    return $this->currentIntegrateModel;
+                }
+
                 $class = self::$LIST_STORE_PICK_UP_INTEGRATE[$configIntegrateStorePickUpValue][0]['class'];
             } else {
                 $class = self::$LIST_STORE_PICK_UP_INTEGRATE['mageworx'][0]['class'];
@@ -91,6 +95,10 @@ class StorePickUpIntegrateManagement extends ServiceAbstract
      */
     public function getList()
     {
+        if (!$this->getCurrentIntegrateModel()) {
+            return [];
+        }
+
         return $this->getCurrentIntegrateModel()
             ->loadStoreLocationData($this->getSearchCriteria())
             ->getOutput();

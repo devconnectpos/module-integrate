@@ -11,6 +11,7 @@ use Magento\Config\Model\Config\Loader;
 
 /**
  * Class RMAIntegrateManagement
+ *
  * @package SM\Integrate\Model
  */
 class RMAIntegrateManagement extends ServiceAbstract
@@ -29,8 +30,8 @@ class RMAIntegrateManagement extends ServiceAbstract
             'aheadWorks' => [
                 [
                     "version" => "~1.0.0",
-                    "class"   => "SM\\Integrate\\RMA\\AheadWorks"
-                ]
+                    "class"   => "SM\\Integrate\\RMA\\AheadWorks",
+                ],
             ],
         ];
     /**
@@ -45,11 +46,12 @@ class RMAIntegrateManagement extends ServiceAbstract
 
     /**
      * RMAIntegrateManagement constructor.
-     * @param RequestInterface $requestInterface
-     * @param DataConfig $dataConfig
-     * @param StoreManagerInterface $storeManager
+     *
+     * @param RequestInterface       $requestInterface
+     * @param DataConfig             $dataConfig
+     * @param StoreManagerInterface  $storeManager
      * @param ObjectManagerInterface $objectManager
-     * @param Loader $loader
+     * @param Loader                 $loader
      */
     public function __construct(
         RequestInterface $requestInterface,
@@ -59,7 +61,7 @@ class RMAIntegrateManagement extends ServiceAbstract
         Loader $loader
     ) {
         $this->objectManager = $objectManager;
-        $this->configLoader  = $loader;
+        $this->configLoader = $loader;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -69,11 +71,15 @@ class RMAIntegrateManagement extends ServiceAbstract
     public function getCurrentIntegrateModel()
     {
         $config = $this->configLoader->getConfigByPath('xretail/pos', 'default', 0);
-        $configIntegrateRMAValue      = isset($config['xretail/pos/integrate_rma_extension']) ?
+        $configIntegrateRMAValue = isset($config['xretail/pos/integrate_rma_extension']) ?
             $config['xretail/pos/integrate_rma_extension']['value'] : 'none';
         if (is_null($this->currentIntegrateModel)) {
             // FIXME: do something to get current integrate class
             if ($configIntegrateRMAValue !== 'none') {
+                if (!isset(self::$LIST_RMA_INTEGRATE[$configIntegrateRMAValue])) {
+                    return $this->currentIntegrateModel;
+                }
+
                 $class = self::$LIST_RMA_INTEGRATE[$configIntegrateRMAValue][0]['class'];
             } else {
                 $class = self::$LIST_RMA_INTEGRATE['aheadWorks'][0]['class'];
@@ -85,19 +91,34 @@ class RMAIntegrateManagement extends ServiceAbstract
         return $this->currentIntegrateModel;
     }
 
-    public function getOrderRMA() {
+    public function getOrderRMA()
+    {
+        if (!$this->getCurrentIntegrateModel()) {
+            return [];
+        }
+
         return $this->getCurrentIntegrateModel()
             ->loadOrderRMAData($this->getSearchCriteria())
             ->getOutput();
     }
 
-    public function getListCustomFields() {
+    public function getListCustomFields()
+    {
+        if (!$this->getCurrentIntegrateModel()) {
+            return [];
+        }
+
         return $this->getCurrentIntegrateModel()
             ->loadListCustomFields($this->getSearchCriteria())
             ->getOutput();
     }
 
-    public function createRequestRMA() {
+    public function createRequestRMA()
+    {
+        if (!$this->getCurrentIntegrateModel()) {
+            return [];
+        }
+
         return $this->getCurrentIntegrateModel()
             ->createRequestRMA()
             ->getOutput();
