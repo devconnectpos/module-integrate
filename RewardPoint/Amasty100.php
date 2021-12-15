@@ -17,6 +17,9 @@ use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
  */
 class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
 {
+    const POINTS_EARN = 'am_earn_reward_points';
+    const POINTS_SPENT = 'am_spent_reward_points';
+
     /**
      * @var Amasty\Earning
      */
@@ -157,6 +160,7 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
     {
         $quote->getShippingAddress()->setCollectShippingRates(true);
         $quote->setData('amrewards_point', $usedPoints);
+        $quote->setData(self::POINTS_SPENT, $usedPoints);
         $quote->setDataChanges(true);
     }
 
