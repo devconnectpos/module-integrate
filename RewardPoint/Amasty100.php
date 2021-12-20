@@ -9,6 +9,7 @@ use Magento\Framework\ObjectManagerInterface;
 use SM\Integrate\Data\RewardPointQuoteData;
 use SM\Integrate\RewardPoint\Contract\AbstractRPIntegrate;
 use SM\Integrate\RewardPoint\Contract\RPIntegrateInterface;
+use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 
 /**
  * Class Amasty100
@@ -35,15 +36,22 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
      */
     protected $checkoutSession;
 
+    /**
+     * @var QuoteResource
+     */
+    protected $quoteResource;
+
     public function __construct(
         ObjectManagerInterface $objectManager,
         \Magento\Framework\Module\Manager $moduleManager,
         Session $checkoutSession,
-        \SM\Integrate\RewardPoint\Amasty\Earning $earning
+        \SM\Integrate\RewardPoint\Amasty\Earning $earning,
+        QuoteResource $quoteResource
     ) {
         $this->earning = $earning;
         $this->moduleManager = $moduleManager;
         $this->checkoutSession = $checkoutSession;
+        $this->quoteResource = $quoteResource;
         parent::__construct($objectManager);
     }
 
@@ -162,6 +170,7 @@ class Amasty100 extends AbstractRPIntegrate implements RPIntegrateInterface
         $quote->setData('amrewards_point', $usedPoints);
         $quote->setData(self::POINTS_SPENT, $usedPoints);
         $quote->setDataChanges(true);
+        $this->quoteResource->save($quote);
     }
 
     /**
