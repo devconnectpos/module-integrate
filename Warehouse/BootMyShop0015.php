@@ -160,6 +160,13 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
                         $_data->setData($k, $item->getData($v));
                     }
 
+                    if (isset($warehouseRouting['items']) && is_array($warehouseRouting['items'])) {
+                        foreach ($warehouseRouting['items'] as $idx => $rswItem) {
+                            $warehouseRouting['items'][$idx]['rsw_use_for_sales'] = '1';
+                            $warehouseRouting['items'][$idx]['rsw_use_for_shipments'] = '1';
+                        }
+                    }
+
                     $_data['addition_data'] = $warehouseRouting;
                     array_push($items, $_data);
                 }
