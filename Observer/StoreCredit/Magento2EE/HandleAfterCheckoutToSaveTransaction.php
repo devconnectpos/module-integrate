@@ -78,7 +78,7 @@ class HandleAfterCheckoutToSaveTransaction implements ObserverInterface
         $allowedCurrencies   = $this->currencyModel->getConfigAllowCurrencies();
         $rates               = $this->currencyModel->getCurrencyRates($baseCurrencyCode, array_values($allowedCurrencies));
         if ($this->integrateHelper->isIntegrateStoreCredit()
-            && $this->integrateHelper->isExistStoreCreditMagento2EE()) {
+            && ($this->integrateHelper->isExistStoreCreditMagento2EE() || $this->integrateHelper->isExistStoreCreditAheadworks())) {
             if ($order->getData('retail_id') && $order->getData('customer_balance_amount')) {
                 $outletId             = $order->getData('outlet_id');
                 $registerId           = $order->getData('register_id');

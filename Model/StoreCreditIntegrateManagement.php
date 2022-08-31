@@ -39,6 +39,12 @@ class StoreCreditIntegrateManagement extends ServiceAbstract
                     "class"   => "SM\\Integrate\\StoreCredit\\Magento2EE",
                 ],
             ],
+            'aheadworks' => [
+                [
+                    "version" => "~1.0.0",
+                    "class"   => "SM\\Integrate\\StoreCredit\\Aheadworks",
+                ],
+            ],
         ];
     /**
      * @var \Magento\Framework\ObjectManagerInterface
