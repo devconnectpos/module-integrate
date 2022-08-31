@@ -11,6 +11,12 @@ use SM\Integrate\Data\StoreCreditQuoteData;
 
 interface StoreCreditIntegrateInterface
 {
+    /**
+     * @param $customer
+     * @param $scope
+     * @return mixed
+     */
+    public function getStoreCreditCollection($customer, $scope = null);
 
     /**
      * @param $data
@@ -29,7 +35,16 @@ interface StoreCreditIntegrateInterface
      * @param      $customerId
      * @param null $scope
      *
-     * @return int
+     * @return float
      */
     public function getCurrentStoreCreditBalance($customerId, $scope = null);
+
+    /**
+     * @param $customer
+     * @param $websiteId
+     * @param $storeId
+     * @param $amountDelta
+     * @return mixed
+     */
+    public function updateCustomerStoreCreditBalance($customer, $websiteId, $storeId, $amountDelta);
 }

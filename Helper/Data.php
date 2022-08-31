@@ -407,6 +407,14 @@ class Data
     }
 
     /**
+     * @return bool
+     */
+    public function isExistStoreCreditAheadworks()
+    {
+        return !!$this->moduleList->getOne("Aheadworks_StoreCredit");
+    }
+
+    /**
      * @return \SM\Integrate\Model\RPIntegrateManagement
      */
     public function getRpIntegrateManagement()

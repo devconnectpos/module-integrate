@@ -22,6 +22,9 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
      */
     protected $integrateHelperData;
 
+    /**
+     * @var StoreManagerInterface
+     */
     protected $storeManager;
 
     /**
@@ -31,6 +34,9 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
      */
     protected $storeCreditFactory;
 
+    /**
+     * @var \Magento\CustomerBalance\Model\Balance|null
+     */
     protected $storeCreditInstance;
 
     public function __construct(
@@ -79,7 +85,7 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
      * @param      $customer
      * @param null $scope
      *
-     * @return int
+     * @return float
      * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function getCurrentStoreCreditBalance($customer, $scope = null)
@@ -96,7 +102,7 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
                 )->loadByCustomer()->getAmount();
             }
         }
-        return $this->storeCreditInstance;
+        return 0;
     }
 
     /**
@@ -127,7 +133,7 @@ class Magento2EE extends AbstractStoreCreditIntegrate implements StoreCreditInte
         $quoteRpData      = new StoreCreditQuoteData();
         $quoteRpData->addData(
             [
-                'use_store_credit'                  => $this->getQuote()->getUseCustomerBalance() === true,
+                'use_store_credit'                  => (bool)$this->getQuote()->getUseCustomerBalance(),
                 'customer_balance_currency'         => $customerStoreCreditDetail,
                 'customer_balance_base_currency'    => $customerStoreCreditDetail,
                 'store_credit_discount_amount'      => $this->getQuote()->getData('customer_balance_amount_used'),
