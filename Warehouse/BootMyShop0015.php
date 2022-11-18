@@ -200,12 +200,12 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             'BoostMyShop\AdvancedStock\Model\ResourceModel\Warehouse\Collection'
         );
 
-        if (is_nan($searchCriteria->getData('currentPage'))) {
+        if (is_nan((float)$searchCriteria->getData('currentPage'))) {
             $collection->setCurPage(1);
         } else {
             $collection->setCurPage($searchCriteria->getData('currentPage'));
         }
-        if (is_nan($searchCriteria->getData('pageSize'))) {
+        if (is_nan((float)$searchCriteria->getData('pageSize'))) {
             $collection->setPageSize(
                 DataConfig::PAGE_SIZE_LOAD_DATA
             );
@@ -221,7 +221,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             } else {
                 $ids = $searchCriteria->getData('entity_id');
             }
-            $collection->addFieldToFilter('w_id', ['in' => explode(",", $ids)]);
+            $collection->addFieldToFilter('w_id', ['in' => explode(",", (string)$ids)]);
         }
 
         return $collection;
@@ -269,12 +269,12 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             'BoostMyShop\AdvancedStock\Model\ResourceModel\Warehouse\Item\Collection'
         );
 
-        if (is_nan($searchCriteria->getData('currentPage'))) {
+        if (is_nan((float)$searchCriteria->getData('currentPage'))) {
             $collection->setCurPage(1);
         } else {
             $collection->setCurPage($searchCriteria->getData('currentPage'));
         }
-        if (is_nan($searchCriteria->getData('pageSize'))) {
+        if (is_nan((float)$searchCriteria->getData('pageSize'))) {
             $collection->setPageSize(
                 DataConfig::PAGE_SIZE_LOAD_DATA
             );
@@ -290,7 +290,7 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             } else {
                 $ids = $searchCriteria->getData('entity_id');
             }
-            $collection->addFieldToFilter('wi_product_id', ['in' => explode(",", $ids)]);
+            $collection->addFieldToFilter('wi_product_id', ['in' => explode(",", (string)$ids)]);
         }
 
         if ($searchCriteria->getData('warehouse_id')) {

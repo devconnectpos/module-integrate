@@ -149,9 +149,9 @@ class AheadWorks extends ServiceAbstract
                 ->addFilter('editable_or_visible_for_status', -1)
                 ->addFilter('options', 'enabled')
                 ->addFilter('is_active', 1);
-            $this->searchCriteriaBuilder->setCurrentPage(is_nan($searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
+            $this->searchCriteriaBuilder->setCurrentPage(is_nan((float)$searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
             $this->searchCriteriaBuilder->setPageSize(
-                is_nan($searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
+                is_nan((float)$searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
             );
             $customFields = $this->objectManager->get('Aheadworks\Rma\Api\CustomFieldRepositoryInterface')->getList($this->searchCriteriaBuilder->create());
             $size                = $customFields->getTotalCount();
