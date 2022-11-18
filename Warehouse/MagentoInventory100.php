@@ -241,14 +241,14 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     {
         $collection = $this->objectManager->create('\Magento\Inventory\Model\ResourceModel\Source\Collection');
 
-        $collection->setCurPage(is_nan($searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
+        $collection->setCurPage(is_nan((float)$searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
         $collection->setPageSize(
-            is_nan($searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
+            is_nan((float)$searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
         );
 
         if ($searchCriteria->getData('entity_id') || $searchCriteria->getData('entityId')) {
             $ids = is_null($searchCriteria->getData('entity_id')) ? $searchCriteria->getData('entityId') : $searchCriteria->getData('entity_id');
-            $collection->addFieldToFilter('source_code', ['in' => explode(",", $ids)]);
+            $collection->addFieldToFilter('source_code', ['in' => explode(",", (string)$ids)]);
         }
 
         return $collection;
@@ -332,9 +332,9 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
     public function getWarehouseItemCollection($searchCriteria)
     {
         $collection = $this->objectManager->create('\Magento\Inventory\Model\ResourceModel\SourceItem\Collection');
-        $collection->setCurPage(is_nan($searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
+        $collection->setCurPage(is_nan((float)$searchCriteria->getData('currentPage')) ? 1 : $searchCriteria->getData('currentPage'));
         $collection->setPageSize(
-            is_nan($searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
+            is_nan((float)$searchCriteria->getData('pageSize')) ? DataConfig::PAGE_SIZE_LOAD_DATA : $searchCriteria->getData('pageSize')
         );
 
         if ($searchCriteria->getData('warehouse_id')) {
@@ -342,7 +342,7 @@ class MagentoInventory100 extends AbstractWarehouseIntegrate implements Warehous
         }
         if ($searchCriteria->getData('entity_sku') || $searchCriteria->getData('entitySku')) {
             $skus = is_null($searchCriteria->getData('entity_sku')) ? $searchCriteria->getData('entitySku') : $searchCriteria->getData('entity_sku');
-            $collection->addFieldToFilter('sku', ['in' => explode(",", $skus)]);
+            $collection->addFieldToFilter('sku', ['in' => explode(",", (string)$skus)]);
         }
 
         return $collection;

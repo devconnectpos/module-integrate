@@ -137,12 +137,12 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
             $collection->addFieldToFilter('warehouse_id', $searchCriteria->getData('entity_id'));
         }
 
-        if (is_nan($searchCriteria->getData('currentPage'))) {
+        if (is_nan((float)$searchCriteria->getData('currentPage'))) {
             $collection->setCurPage(1);
         } else {
             $collection->setCurPage($searchCriteria->getData('currentPage'));
         }
-        if (is_nan($searchCriteria->getData('pageSize'))) {
+        if (is_nan((float)$searchCriteria->getData('pageSize'))) {
             $collection->setPageSize(
                 DataConfig::PAGE_SIZE_LOAD_DATA
             );
@@ -280,7 +280,7 @@ class Magestore111 extends AbstractWarehouseIntegrate implements WarehouseIntegr
                     foreach ($this->transformWarehouseData as $k => $v) {
                         $_data->setData($k, $item->getData($v));
                     }
-    
+
                     $_data['addition_data'] = ['type' => 'mage_store'];
                     array_push($items, $_data);
                 }

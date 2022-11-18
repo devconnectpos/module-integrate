@@ -193,7 +193,7 @@ class BmsStockTransfer extends ServiceAbstract
         $collection->addAttributeToFilter('type_id', ['in' => 'simple']);
         $searchValue = $searchCriteria->getData('searchString');
         $searchValue = str_replace(',', ' ', $searchValue);
-        foreach (explode(" ", $searchValue) as $value) {
+        foreach (explode(" ", (string)$searchValue) as $value) {
             $_fieldFilters = [];
             foreach ($fieldSearch as $field) {
                 $_fieldFilters[] = ['attribute' => $field, 'like' => '%' . $value . '%'];
