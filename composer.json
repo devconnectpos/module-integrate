@@ -2,7 +2,7 @@
 	"name": "connectpos/module-integrate",
 	"description": "N/A",
 	"type": "magento2-module",
-  "version": "22.11.18",
+  "version": "24.09.03",
 	"license": [
 		"proprietary"
 	],

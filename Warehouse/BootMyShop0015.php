@@ -269,12 +269,12 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
             'BoostMyShop\AdvancedStock\Model\ResourceModel\Warehouse\Item\Collection'
         );
 
-        if (is_nan((float)$searchCriteria->getData('currentPage'))) {
+        if (empty($searchCriteria->getData('currentPage'))) {
             $collection->setCurPage(1);
         } else {
             $collection->setCurPage($searchCriteria->getData('currentPage'));
         }
-        if (is_nan((float)$searchCriteria->getData('pageSize'))) {
+        if (empty($searchCriteria->getData('pageSize'))) {
             $collection->setPageSize(
                 DataConfig::PAGE_SIZE_LOAD_DATA
             );
@@ -391,3 +391,4 @@ class BootMyShop0015 extends AbstractWarehouseIntegrate implements WarehouseInte
         return 0;
     }
 }
+
